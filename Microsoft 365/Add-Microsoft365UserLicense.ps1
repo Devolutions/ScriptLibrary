@@ -1,4 +1,5 @@
-#requires -Version 7.0 -Module @{ ModuleName='Microsoft.Graph'; ModuleVersion='2.19.0' }
+#requires -Version 7.0 
+#requires -Modules @{ ModuleName='Microsoft.Graph.Authentication'; ModuleVersion='2.19.0' },@{ ModuleName='Microsoft.Graph.Users'; ModuleVersion='2.19.0' },@{ ModuleName='Microsoft.Graph.Subscriptions'; ModuleVersion='2.19.0' }
 
 <#
 .SYNOPSIS
