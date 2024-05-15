@@ -4,6 +4,37 @@
 #requires -Modules @{ ModuleName='Microsoft.Graph.Identity.SignIns'; ModuleVersion='2.19.0' }
 #requires -Modules @{ ModuleName='Microsoft.Graph.Applications'; ModuleVersion='2.19.0' }
 
+<#
+.SYNOPSIS
+    Registers or re-registers a user for multi-factor authentication (MFA) in Entra ID.
+
+.DESCRIPTION
+    This script clears existing authentication methods for a specified user and sets up new MFA registration.
+    It requires the user ID of the Entra ID account to be provided.
+
+.PARAMETER UserId
+    Specifies the user ID of the Entra ID account for which to manage MFA registration. This must be a valid user identifier.
+
+.EXAMPLE
+    PS> .\Invoke-EntraIdUserMfaRegistration.ps1 -UserId "a1234567-89b0-12d3-a456-426614174000"
+
+    This example clears existing MFA methods and initiates a new MFA registration process for the specified user ID.
+
+.INPUTS
+    None. Parameters must be provided when the script is called.
+
+.OUTPUTS
+    None directly from the script. Actions performed are related to Entra ID user MFA management operations.
+
+.NOTES
+    The script requires authentication to Microsoft Graph with appropriate permissions. Users should be authenticated with
+    permissions to manage user authentication methods, such as UserAuthenticationMethod.ReadWrite.All.
+
+.LINK
+    https://learn.microsoft.com/en-us/powershell/module/microsoft.graph.identity.signins
+#>
+
+
 [CmdletBinding()]
 param (
     [Parameter(Mandatory)]

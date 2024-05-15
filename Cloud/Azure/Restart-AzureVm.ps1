@@ -1,3 +1,39 @@
+<#
+.SYNOPSIS
+    Restarts a specified Azure virtual machine if it is currently running.
+
+.DESCRIPTION
+    This script checks the status of a specified Azure virtual machine and restarts it if it is running.
+    It requires the virtual machine name and the resource group name as inputs. The script also ensures
+    that the user is logged into Azure, the resource group exists, and the virtual machine exists within
+    the specified resource group.
+
+.PARAMETER VmName
+    Specifies the name of the virtual machine to be restarted. This parameter is mandatory.
+
+.PARAMETER ResourceGroupName
+    Specifies the name of the resource group in which the virtual machine resides. This parameter is mandatory.
+
+.EXAMPLE
+    PS> .\Restart-AzureVM.ps1 -VmName "MyVM" -ResourceGroupName "MyResourceGroup"
+
+    This command restarts the virtual machine named "MyVM" in the "MyResourceGroup" if it is currently running.
+
+.INPUTS
+    None. Parameters must be provided when the script is called.
+
+.OUTPUTS
+    None directly from the script. Actions performed are related to Azure virtual machine operations.
+
+.NOTES
+    The script requires that the user be logged into Azure. The user must have appropriate permissions
+    to restart the virtual machine within the specified resource group.
+
+.LINK
+    https://learn.microsoft.com/en-us/powershell/module/az.compute/restart-azvm
+
+#>
+
 #requires -Modules @{ ModuleName='Az.Accounts'; ModuleVersion='2.15.1' }
 #requires -Modules @{ ModuleName='Az.Resources'; ModuleVersion='6.15.0' }
 #requires -Modules @{ ModuleName='Az.Compute'; ModuleVersion='7.1.1' }

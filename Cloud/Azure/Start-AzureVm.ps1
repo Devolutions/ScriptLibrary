@@ -2,6 +2,42 @@
 #requires -Modules @{ ModuleName='Az.Resources'; ModuleVersion='6.15.0' }
 #requires -Modules @{ ModuleName='Az.Compute'; ModuleVersion='7.1.1' }
 
+<#
+.SYNOPSIS
+    Starts a specified Azure virtual machine if it is not currently running.
+
+.DESCRIPTION
+    This script checks the status of a specified Azure virtual machine and starts it if it is not already running.
+    It requires the virtual machine name and the resource group name as inputs. The script also ensures that the
+    user is logged into Azure, the resource group exists, and the virtual machine exists within the specified
+    resource group.
+
+.PARAMETER VmName
+    Specifies the name of the virtual machine to be started. This parameter is mandatory.
+
+.PARAMETER ResourceGroupName
+    Specifies the name of the resource group in which the virtual machine resides. This parameter is mandatory.
+
+.EXAMPLE
+    PS> .\Start-AzVM.ps1 -VmName "MyVM" -ResourceGroupName "MyResourceGroup"
+
+    This command starts the virtual machine named "MyVM" in the "MyResourceGroup" if it is not already running.
+
+.INPUTS
+    None. Parameters must be provided when the script is called.
+
+.OUTPUTS
+    None directly from the script. Actions performed are related to Azure virtual machine operations.
+
+.NOTES
+    The script requires that the user be logged into Azure. The user must have appropriate permissions to start
+    the virtual machine within the specified resource group.
+
+.LINK
+    https://learn.microsoft.com/en-us/powershell/module/az.compute/start-azvm
+
+#>
+
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)] 

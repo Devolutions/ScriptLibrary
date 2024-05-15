@@ -25,10 +25,6 @@
     This command runs the script with specified paths for the setup folder, Intune Content Preparation Tool, the setup file,
     and the output folder, packaging the application for Intune deployment.
 
-.FUNCTIONALITY
-    This script leverages the Intune Content Preparation Tool to package applications for deployment. It ensures that all
-    prerequisites such as file and path validations are met before proceeding with the packaging process.
-
 .INPUTS
     None. Parameters must be provided when the script is called.
 
