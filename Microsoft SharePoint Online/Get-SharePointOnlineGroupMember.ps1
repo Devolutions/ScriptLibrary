@@ -134,6 +134,12 @@ if ($PSBoundParameters.ContainsKey('SiteUrl')) {
     $getSiteGroupParams.Site = $SiteUrl.ToString()
 }
 
-Get-PnPSiteGroup @getSiteGroupParams | ForEach-Object { 
-    Get-PnPGroupMember -Group $_.Title 
+Get-PnPSiteGroup @getSiteGroupParams -PipelineVariable 'group' | ForEach-Object {
+    Get-PnPGroupMember -Group $group.Title | ForEach-Object {
+        [pscustomobject]@{
+            GroupName = $group.Title
+            LoginName = $_.LoginName
+            Title     = $_.Title
+        }
+    }
 }
