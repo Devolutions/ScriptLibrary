@@ -2,18 +2,18 @@
 
 <#
 .SYNOPSIS
-    This script facilitates the installation, downloading, and management of Windows updates on one or multiple computers.
+    This script retrieves Windows updates on a local computer using various parameters to control the update process.
 
 .DESCRIPTION
-    The script utilizes the PSWindowsUpdate module to manage Windows updates. It supports various parameters for filtering 
-    and specifying the updates to be managed, including scheduling options, criteria for selection, and actions to be taken. 
-    The script also supports reporting and history features, allowing for detailed control and monitoring of update activities.
+    The script utilizes the PSWindowsUpdate module to get Windows updates. It provides options to send reports, schedule updates,
+    accept all updates, hide updates, and specify various criteria for update selection. The script supports Windows Update and 
+    Microsoft Update services.
 
 .PARAMETER SendReport
     Sends a report of the update status.
 
 .PARAMETER PSWUSettings
-    A hashtable of settings for PSWindowsUpdate module.
+    A hashtable of settings for the PSWindowsUpdate module.
 
 .PARAMETER SendHistory
     Sends the update history report.
@@ -29,27 +29,6 @@
 
 .PARAMETER Hide
     Hides the specified updates.
-
-.PARAMETER Download
-    Downloads the specified updates.
-
-.PARAMETER ForceDownload
-    Forces the download of updates, ignoring any preconditions.
-
-.PARAMETER Install
-    Installs the specified updates.
-
-.PARAMETER ForceInstall
-    Forces the installation of updates, ignoring any preconditions.
-
-.PARAMETER AutoReboot
-    Automatically reboots the computer after installing updates.
-
-.PARAMETER IgnoreReboot
-    Ignores reboot requests after installing updates.
-
-.PARAMETER ScheduleReboot
-    Schedules a reboot at a specified date and time after updates are installed.
 
 .PARAMETER ServiceID
     Specifies the service ID for the updates (parameter set: 'ServiceID').
@@ -155,16 +134,15 @@
     For more information on PSWindowsUpdate, visit: https://github.com/PSWindowsUpdate/PSWindowsUpdate
 
 .EXAMPLE
-    PS> .\Install-WindowsUpdate.ps1 -ComputerName 'Server01' -Install -AutoReboot
+    PS> .\Manage-WindowsUpdate.ps1 -Install -AutoReboot
     
-    This example installs updates on 'Server01' and automatically reboots the computer after installation.
+    This example installs all available updates and automatically reboots the computer after installation.
 
 .EXAMPLE
-    PS> .\Install-WindowsUpdate.ps1 -ComputerName 'Server01','Server02' -Download -SendReport
+    PS> .\Manage-WindowsUpdate.ps1 -Download -SendReport
     
-    This example downloads updates on 'Server01' and 'Server02' and sends a report of the update status.
+    This example downloads all available updates and sends a report of the update status.
 #>
-
 
 [CmdletBinding(DefaultParameterSetName = 'Default', SupportsShouldProcess = $true, ConfirmImpact = 'High')]
 param(
@@ -188,27 +166,6 @@ param(
 
     [switch]
     ${Hide},
-
-    [switch]
-    ${Download},
-
-    [switch]
-    ${ForceDownload},
-
-    [switch]
-    ${Install},
-
-    [switch]
-    ${ForceInstall},
-
-    [switch]
-    ${AutoReboot},
-
-    [switch]
-    ${IgnoreReboot},
-
-    [datetime]
-    ${ScheduleReboot},
 
     [Parameter(ParameterSetName = 'ServiceID')]
     [string]
@@ -302,9 +259,6 @@ param(
     [Alias('Silent')]
     [switch]
     ${IgnoreUserInput},
-
-    [switch]
-    ${IgnoreRebootRequired},
 
     [switch]
     ${AutoSelectOnly},
