@@ -187,7 +187,7 @@ If (-Not ($validateDVLSGroupUsers -Contains $DVLSVariables.DVLSUser -And $valida
     Exit
 }
 
-If (-Not ((& stat -c %a ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent) -EQ '770' -And (& stat -c %a $DVLSVariables.DVLSPath) -EQ '770')) {
+If (-Not ((& sudo stat -c %a ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent) -EQ '770' -And (& sudo stat -c %a $DVLSVariables.DVLSPath) -EQ '770')) {
     Write-Error ("[{0}] Permissions on '{1}' are incorrect" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath)
     Exit
 }
