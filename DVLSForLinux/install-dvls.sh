@@ -138,7 +138,7 @@ else
   PWSH_SCRIPT_PATH="/tmp/DevolutionsScriptLibrary-$PWSH_SCRIPT_NAME" # Prefix to avoid conflicts as much as possible.
   PWSH_SCRIPT_URL="https://raw.githubusercontent.com/Devolutions/ScriptLibrary/refs/heads/main/DVLSForLinux/$PWSH_SCRIPT_NAME"
   echo "Downloading $PWSH_SCRIPT_NAME from $PWSH_SCRIPT_URL"
-  curl "$PWSH_SCRIPT_URL" -o "$PWSH_SCRIPT_PATH"
+  curl --fail "$PWSH_SCRIPT_URL" -o "$PWSH_SCRIPT_PATH"
 fi
 
 args=("-File" $PWSH_SCRIPT_PATH ${args[@]})
