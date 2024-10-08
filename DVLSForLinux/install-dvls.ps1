@@ -254,7 +254,15 @@ Write-Host ("[{0}] Modifying permissions on '{1}'" -F (Get-Date -Format "yyyyMMd
 
 Write-Verbose ("[{0}] Validating appsettings.json exists" -F (Get-Date -Format "yyyyMMddHHmmss"))
 
-If (-Not (Test-Path -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json'))) {
+$AppSettingsExists = & sudo $PwshExecutable -Command {
+    Param(
+        $DVLSVariables
+    )
+
+    Test-Path -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json')
+} -Args $DVLSVariables
+
+If (-Not $AppSettingsExists) {
     Write-Error ("[{0}] appsettings.json does not exist or is inaccessible" -F (Get-Date -Format "yyyyMMddHHmmss"))
     Exit
 }
