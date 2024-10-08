@@ -1,17 +1,20 @@
 #!/usr/bin/env pwsh
 
 Param(
-   [string] $DVLSHostName,
-   [string] $DVLSAdminEmail,
-   [string] $DatabaseHost,
-   [string] $DatabaseUsername,
-   [string] $DatabasePassword,
-   [switch] $DatabaseEncryptedConnection,
-   [switch] $DatabaseTrustServerCertificate,
-   [switch] $CreateDatabase = $True,
-   [switch] $GenerateSelfSignedCertificate,
-   [switch] $EnableTelemetry = $True,
-   [switch] $Confirm = $True
+    [string] $DVLSHostName,
+    [string] $DVLSAdminEmail,
+    [string] $DatabaseHost,
+    [string] $DatabaseUsername,
+    [string] $DatabasePassword,
+    [Bool] $CreateDatabase = $True,
+    [Bool] $EnableTelemetry = $True,
+    [Bool] $Confirm = $True,
+    [ValidateSet($Null, $True, $False)]
+    [Bool] $DatabaseEncryptedConnection,
+    [ValidateSet($Null, $True, $False)]
+    [object] $DatabaseTrustServerCertificate,
+    [ValidateSet($Null, $True, $False)]
+    [object] $GenerateSelfSignedCertificate
 )
 
 $PwshExecutable = (Get-Process -Id $pid).Path
@@ -51,14 +54,20 @@ $DVLSVariables = @{
     'DatabasePassword'               = ($DatabasePassword ? $DatabasePassword.Trim() : (Read-Host "Enter the database user password" -MaskInput).Trim())
     'DatabaseEncryptedConnection'    = $Null
     'DatabaseTrustServerCertificate' = $Null
-    'EnableTelemetry'                = [Bool]$EnableTelemetry
+    'CreateDatabase'                 = $CreateDatabase
+    'EnableTelemetry'                = $EnableTelemetry
     'DVLSAdminUsername'              = 'dvls-admin'
     'DVLSAdminPassword'              = 'dvls-admin'
     'DVLSAdminEmail'                 = ($DVLSAdminEmail ? $DVLSAdminEmail.Trim() : (Read-Host "Enter the email to use for the DVLS administrative user").Trim())
     'DVLSCertificate'                = $False
 }
 
-If ([Bool]$GenerateSelfSignedCertificate -Is [Bool]) {
+If (Test-Path -Path $DVLSVariables.SystemDPath) {
+    Write-Error ("[{0}] An existing Devolutions Server of Linux (Beta) SystemD Unit file already appears, aborting installation" -F (Get-Date -Format "yyyyMMddHHmmss"))
+    Exit
+}
+
+If ($GenerateSelfSignedCertificate -Is [Bool]) {
     $DVLSVariables.DVLSCertificate = [Bool]$GenerateSelfSignedCertificate
 } Else {
     $DVLSVariables.DVLSCertificate = ($Host.UI.PromptForChoice("", "Generate self-signed certificate?", @('&Yes', '&No'), 1)) ? $False : $True
@@ -70,21 +79,16 @@ If ($DVLSVariables.DVLSCertificate) {
     $DVLSVariables.DVLSURI = ("http://{0}:5000/" -F $DVLSVariables.DVLSHostName)
 }
 
-If (Test-Path -Path $DVLSVariables.SystemDPath) {
-    Write-Error ("[{0}] An existing Devolutions Server of Linux (Beta) SystemD Unit file already appears, aborting installation" -F (Get-Date -Format "yyyyMMddHHmmss"))
-    Exit
-}
-
-If ([Bool]$EncryptedDBConnection -Is [Bool]) {
+If ($DatabaseEncryptedConnection -Is [Bool]) {
     $DVLSVariables.UseEncryptedConnection = [Bool]$DatabaseEncryptedConnection
+} Else {
+    # TODO: prompt
 }
 
-If ([Bool]$DatabaseTrustServerCertificate -Is [Bool]) {
+If ($DatabaseTrustServerCertificate -Is [Bool]) {
     $DVLSVariables.TrustServerCertificate = [Bool]$DatabaseTrustServerCertificate
-}
-
-If ([Bool]$CreateDatabase -Is [Bool]) {
-    $DVLSVariables.CreateDatabase = [Bool]$CreateDatabase
+} Else {
+    # TODO: prompt
 }
 
 $DVLSVariables | Select-Object -Property @(
@@ -103,7 +107,7 @@ $DVLSVariables | Select-Object -Property @(
     @{
         'Name'       = 'DatabaseEncryptedConnection'
         'Expression' = {
-            If ($PSItem.DatabaseEncryptedConnection -EQ $Null) {
+            If ($PSItem.DatabaseEncryptedConnection -Eq $Null) {
                 'Undefined'
             } Else {
                 $PSItem.DatabaseEncryptedConnection
@@ -113,7 +117,7 @@ $DVLSVariables | Select-Object -Property @(
     @{
         'Name'       = 'DatabaseTrustServerCertificate'
         'Expression' = {
-            If ($PSItem.DatabaseTrustServerCertificate -EQ $Null) {
+            If ($PSItem.DatabaseTrustServerCertificate -Eq $Null) {
                 'Undefined'
             } Else {
                 $PSItem.DatabaseTrustServerCertificate
@@ -122,7 +126,7 @@ $DVLSVariables | Select-Object -Property @(
     }
 ) | Format-List
 
-If ([Bool]$Confirm) {
+If ($Confirm) {
     Write-Warning "If the above values look correct, enter [Y] or press Enter to continue" -WarningAction Inquire
 }
 
