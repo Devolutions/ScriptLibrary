@@ -158,8 +158,9 @@ Write-Host ("[{0}] Creating user ({1}), group ({2}), and directory ({3})" -F (Ge
     & usermod -a -G $DVLSVariables.DVLSGroup $DVLSVariables.DVLSUser
     & usermod -a -G $DVLSVariables.DVLSGroup $DVLSVariables.CurrentUser
     & mkdir -p $DVLSVariables.DVLSPath
-    & chown -R ("{0}:{1}" -F $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup) ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent
-    & chmod -R 770 ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent
+    & chown -R ("{0}:{1}" -F $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup) $DVLSVariables.DVLSPath
+    & chmod 755 ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent
+    & chmod 755 $DVLSVariables.DVLSPath
 } -Args $DVLSVariables
 
 Write-Verbose ("[{0}] Switching group to '{1}'" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSGroup)
@@ -187,7 +188,7 @@ If (-Not ($validateDVLSGroupUsers -Contains $DVLSVariables.DVLSUser -And $valida
     Exit
 }
 
-If (-Not ((& sudo stat -c %a ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent) -EQ '770' -And (& sudo stat -c %a $DVLSVariables.DVLSPath) -EQ '770')) {
+If (-Not ((& stat -c %a ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent) -EQ '755' -And (& stat -c %a $DVLSVariables.DVLSPath) -EQ '755')) {
     Write-Error ("[{0}] Permissions on '{1}' are incorrect" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath)
     Exit
 }
@@ -239,15 +240,15 @@ Write-Host ("[{0}] Modifying permissions on '{1}'" -F (Get-Date -Format "yyyyMMd
     
     & chown -R ("{0}:{1}" -F $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup) $DVLSVariables.DVLSPath
     & chmod -R o-rwx $DVLSVariables.DVLSPath
-    & chmod 770 (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json')
-    & chmod 770 (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'App_Data')
+    & chmod 640 (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json')
+    & chmod 750 (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'App_Data')
     & chown -R ("{0}:{1}" -F $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup) $DVLSVariables.DVLSPath
 } -Args $DVLSVariables
 
 Write-Verbose ("[{0}] Validating appsettings.json exists" -F (Get-Date -Format "yyyyMMddHHmmss"))
 
 If (-Not (Test-Path -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json'))) {
-    Write-Error ("[{0}] Appsettings.json does not exist or is inaccessible" -F (Get-Date -Format "yyyyMMddHHmmss"))
+    Write-Error ("[{0}] appsettings.json does not exist or is inaccessible" -F (Get-Date -Format "yyyyMMddHHmmss"))
     Exit
 }
 
