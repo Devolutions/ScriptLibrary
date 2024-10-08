@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 Param(
    [string] $DVLSHostName,
    [string] $DVLSAdminEmail,
