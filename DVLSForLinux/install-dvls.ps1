@@ -13,8 +13,9 @@ Param(
 )
 
 $PwshExecutable = (Get-Process -Id $pid).Path
+$DvlsForLinuxName = "Devolutions Server for Linux (Beta)"
 
-Write-Host ("[{0}] Starting the Devolutions Server for Linux (Beta) installation script" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+Write-Host ("[{0}] Starting the $DvlsForLinuxName installation script" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
 
 # Test for sudo rights, without prompting for password
 $sudoResult = & sudo -vn > /dev/null 2>&1 && sudo -ln > /dev/null 2>&1 
@@ -23,11 +24,11 @@ Switch ($sudoResult) {
     "*password is required*" {}
     "*may run*" {}
     "*sorry*" {
-        Write-Error ("[{0}] Devolutions Server for Linux (Beta) requires sudo privileges" -F (Get-Date -Format "yyyyMMddHHmmss"))
+        Write-Error ("[{0}] $DvlsForLinuxName requires sudo privileges" -F (Get-Date -Format "yyyyMMddHHmmss"))
         Exit
     }
     Default {
-        Write-Error ("[{0}] Devolutions Server for Linux (Beta) requires sudo privileges" -F (Get-Date -Format "yyyyMMddHHmmss"))
+        Write-Error ("[{0}] $DvlsForLinuxName requires sudo privileges" -F (Get-Date -Format "yyyyMMddHHmmss"))
         Exit
     }
 }
@@ -222,7 +223,7 @@ If ( -Not
     
     $DVLSDownloadPath = Join-Path -Path "/tmp" -ChildPath (([URI]$DVLSLinux.URL).Segments)[-1]
 
-    Write-Host ("[{0}] Downloading and extracting latest Devolutions Server for Linux (Beta) release: {1}" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSLinux.Version) -ForegroundColor Green
+    Write-Host ("[{0}] Downloading and extracting latest $DvlsForLinuxName release: {1}" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSLinux.Version) -ForegroundColor Green
 
     Invoke-RestMethod -Method 'GET' -Uri $DVLSLinux.URL -OutFile $DVLSDownloadPath | Out-Null
     
@@ -254,7 +255,7 @@ If (-Not (Test-Path -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'a
 
 Set-Location -Path $DVLSVariables.DVLSPath | Out-Null
 
-Write-Host ("[{0}] Installing Devolutions Server for Linux (Beta)" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+Write-Host ("[{0}] Installing $DvlsForLinuxName" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
 
 $Params = @{
     "DatabaseHost"           = $DVLSVariables.DatabaseHost
@@ -340,11 +341,13 @@ If (-Not (Test-Path -Path $DVLSVariables.SystemDPath)) {
     Exit
 }
 
-Write-Host ("[{0}] Starting Devolutions Server for Linux (Beta) at '{1}' - 10 Second Sleep" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSURI) -ForegroundColor Green
+Write-Host ("[{0}] Starting $DvlsForLinuxName at '{1}' - 15 Second Sleep" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSURI) -ForegroundColor Green
 
 & sudo systemctl start dvls.service
 
-Start-Sleep -Seconds 10
+Start-Sleep -Seconds 15
+
+Write-Host ("[{0}] Restart $DvlsForLinuxName at '{1}'" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSURI) -ForegroundColor Green
 
 & sudo systemctl restart dvls.service
 
@@ -354,10 +357,10 @@ If ($Result) {
     $ID, $Load, $Active, $Status, $Description = ($Result.Trim()) -Split '\s+', 5
 
     If ($ID -And $Active -And ($Status -EQ 'running')) {
-        Write-Host ("[{0}] Devolutions Server for Linux (Beta) is running" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+        Write-Host ("[{0}] $DvlsForLinuxName is running" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
     } Else {
-        Write-Error ("[{0}] Devolutions Server for Linux (Beta) service status was not found" -F (Get-Date -Format "yyyyMMddHHmmss"))
+        Write-Error ("[{0}] $DvlsForLinuxName service status was not found" -F (Get-Date -Format "yyyyMMddHHmmss"))
     }
 } Else {
-    Write-Error ("[{0}] Devolutions Server for Linux (Beta) failed to start" -F (Get-Date -Format "yyyyMMddHHmmss"))
+    Write-Error ("[{0}] $DvlsForLinuxName failed to start" -F (Get-Date -Format "yyyyMMddHHmmss"))
 }
