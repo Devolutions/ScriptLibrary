@@ -202,8 +202,8 @@ Write-Host ("[{0}] Creating user ({1}), group ({2}), and directory ({3})" -F (Ge
     & usermod -a -G $DVLSVariables.DVLSGroup $DVLSVariables.CurrentUser
     & mkdir -p $DVLSVariables.DVLSPath
     & chown -R ("{0}:{1}" -F $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup) ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent
-    & chmod 770 ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent
-    & chmod 770 $DVLSVariables.DVLSPath
+    & chmod 550 ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent
+    & chmod 550 $DVLSVariables.DVLSPath
 } -Args $DVLSVariables
 
 Write-Verbose ("[{0}] Switching group to '{1}'" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSGroup)
@@ -231,7 +231,7 @@ if (-Not ($validateDVLSGroupUsers -Contains $DVLSVariables.DVLSUser -And $valida
     Exit
 }
 
-if (-Not ((& stat -c %a ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent) -EQ '770' -And (& stat -c %a $DVLSVariables.DVLSPath) -EQ '770')) {
+if (-Not ((& stat -c %a ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent) -EQ '550' -And (& stat -c %a $DVLSVariables.DVLSPath) -EQ '550')) {
     Write-Error ("[{0}] Permissions on '{1}' are incorrect" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath)
     Exit
 }
@@ -348,8 +348,14 @@ New-DPSAdministrator -ConnectionString $Settings.ConnectionStrings.LocalSqlServe
 if ($DVLSVariables.DVLSCertificate) {
     Write-Host ("[{0}] Generating self-signed certificate" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
 
-    & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout cert.key -out cert.crt -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=IP:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
-    & openssl pkcs12 -export -out cert.pfx -inkey cert.key -in cert.crt -passout pass: > /dev/null 2>&1
+    & sudo $PwshExecutable -Command {
+        Param(
+            $DVLSVariables
+        )
+
+        & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout cert.key -out cert.crt -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=IP:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
+        & openssl pkcs12 -export -out cert.pfx -inkey cert.key -in cert.crt -passout pass: > /dev/null 2>&1
+    } -Args $DVLSVariables
 
     $JSON = Get-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath "appsettings.json") | ConvertFrom-Json -Depth 100
 
