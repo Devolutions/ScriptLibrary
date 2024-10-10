@@ -24,7 +24,7 @@ $DvlsForLinuxName = "Devolutions Server for Linux (Beta)"
 
 Write-Host ("[{0}] Starting the $DvlsForLinuxName installation script" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
 
-# Test for sudo rights, without prompting for password
+# Test for sudo rights, without prompting for password.
 $sudoResult = & sudo -vn > /dev/null 2>&1 && sudo -ln > /dev/null 2>&1 
 
 Switch ($sudoResult) {
@@ -64,6 +64,12 @@ $DVLSVariables = @{
     'DVLSAdminEmail'                 = ($DVLSAdminEmail ? $DVLSAdminEmail.Trim() : (Read-Host "Enter the email to use for the DVLS administrative user").Trim())
     'DVLSCertificate'                = $False
     'ZipFile'                        = ($ZipFile ? $ZipFile.Trim() : $Null)
+    'TmpFolder'                      = "/tmp/devolutions-dvls-installation-script/"
+}
+
+if (-Not (Test-Path -Path $DVLSVariables.TmpFolder)) {
+    # Create the temporary directory we’ll use across the script.
+    New-Item -Path $DVLSVariables.TmpFolder -ItemType Directory
 }
 
 if (Test-Path -Path $DVLSVariables.SystemDPath) {
@@ -91,19 +97,22 @@ If ([String]::IsNullOrWhiteSpace($DVLSVariables.DatabaseName)) {
 
 If ($DatabaseEncryptedConnection -And $DatabaseEncryptedConnection -Is [Bool]) {
     $DVLSVariables.DatabaseEncryptedConnection = [Bool]$DatabaseEncryptedConnection
-} Else {
+}
+Else {
     $DVLSVariables.DatabaseEncryptedConnection = ($Host.UI.PromptForChoice("", "Is connection to DB encrypted (default is no)?", @('&Yes', '&No'), 1)) ? $False : $True
 }
 
 If ($DatabaseTrustServerCertificate -And $DatabaseTrustServerCertificate -Is [Bool]) {
     $DVLSVariables.DatabaseTrustServerCertificate = [Bool]$DatabaseTrustServerCertificate
-} Else {
+}
+Else {
     $DVLSVariables.DatabaseTrustServerCertificate = ($Host.UI.PromptForChoice("", "Trust the database server certificate (default is no)?", @('&Yes', '&No'), 1)) ? $False : $True
 }
 
 If ($CreateDatabase -And $CreateDatabase -Is [Bool]) {
     $DVLSVariables.CreateDatabase = [Bool]$CreateDatabase
-} Else {
+}
+Else {
     $DVLSVariables.CreateDatabase = ($Host.UI.PromptForChoice("", "Create the database (default is yes)?", @('&Yes', '&No'), 0)) ? $False : $True
 }
 
@@ -154,7 +163,8 @@ $DVLSVariables | Select-Object -Property @(
         'Expression' = {
             If ($PSItem.ZipFile -EQ $Null) {
                 'Undefined'
-            } Else {
+            }
+            Else {
                 $PSItem.ZipFile
             }
         }
@@ -264,13 +274,14 @@ if ( -Not
             "Hash"    = (($Result | Select-String DPSLinuxX64bin.hash) -Split "=")[-1].Trim()
         }
         
-        $DVLSFilePath = Join-Path -Path "/tmp" -ChildPath (([URI]$DVLSLinux.URL).Segments)[-1]
+        $DVLSFilePath = Join-Path -Path $DVLSVariables.$TmpFolder -ChildPath (([URI]$DVLSLinux.URL).Segments)[-1]
 
         Write-Host ("[{0}] Downloading and extracting latest $DVLSForLinuxName release: {1}" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSLinux.Version) -ForegroundColor Green
 
         Invoke-RestMethod -Method 'GET' -Uri $DVLSLinux.URL -OutFile $DVLSFilePath | Out-Null
-    } Else {
-        $ResolvedCopy = Copy-Item -Path $DVLSVariables.ZipFile -Destination "/tmp" -PassThru
+    }
+    Else {
+        $ResolvedCopy = Copy-Item -Path $DVLSVariables.ZipFile -Destination $DVLSVariables.$TmpFolder -PassThru
 
         $DVLSFilePath = $ResolvedCopy.FullName
     }
@@ -348,19 +359,25 @@ New-DPSAdministrator -ConnectionString $Settings.ConnectionStrings.LocalSqlServe
 if ($DVLSVariables.DVLSCertificate) {
     Write-Host ("[{0}] Generating self-signed certificate" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
 
-    & sudo $PwshExecutable -Command {
-        Param(
-            $DVLSVariables
-        )
+    $keyFile = "cert.key"
+    $keyTmpPath = Join-Path -Path $DVLSVariables.TmpFolder -ChildPath $keyFile
 
-        & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout cert.key -out cert.crt -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=IP:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
-        & openssl pkcs12 -export -out cert.pfx -inkey cert.key -in cert.crt -passout pass: > /dev/null 2>&1
-    } -Args $DVLSVariables
+    $crtFile = "cert.crt"
+    $crtTmpPath = Join-Path -Path $DVLSVariables.TmpFolder -ChildPath $crtFile
+
+    $pfxFile = "cert.pfx"
+    $pfxTmpPath = Join-Path -Path $DVLSVariables.TmpFolder -ChildPath $pfxFile
+    $pfxDvlsPath = Join-Path -Path $DVLSVariables.DVLSPath -ChildPath $pfxFile
+
+    & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout $keyTmpPath -out $crtTmpPath -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=IP:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
+    & openssl pkcs12 -export -out $pfxTmpPath -inkey $keyTmpPath -in $crtTmpPath -passout pass: > /dev/null 2>&1
+
+    & sudo Move-Item -Path $pfxTmpPath -Destination $pfxDvlsPath
 
     $JSON = Get-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath "appsettings.json") | ConvertFrom-Json -Depth 100
 
     $JSON.Kestrel.Endpoints.Http | Add-Member -MemberType NoteProperty -Name "Certificate" -Value @{
-        "Path"     = (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath "cert.pfx")
+        "Path"     = $pfxDvlsPath
         "Password" = ""
     }
 
@@ -372,7 +389,7 @@ if ($DVLSVariables.DVLSCertificate) {
         Param(
             $DVLSVariables
         )
-        
+
         & chown ("{0}:{1}" -F $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup) (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath "cert.pfx")
         & chown ("{0}:{1}" -F $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup) (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath "cert.crt")
         & chown ("{0}:{1}" -F $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup) (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath "cert.key")
@@ -438,4 +455,5 @@ if ($Result) {
 else {
     Write-Error ("[{0}] $DvlsForLinuxName failed to start" -F (Get-Date -Format "yyyyMMddHHmmss"))
 }
+
 
