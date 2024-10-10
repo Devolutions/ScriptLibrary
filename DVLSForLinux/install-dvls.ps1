@@ -361,9 +361,11 @@ if ($DVLSVariables.DVLSCertificate) {
 
     $keyFile = "cert.key"
     $keyTmpPath = Join-Path -Path $DVLSVariables.TmpFolder -ChildPath $keyFile
+    $keyDvlsPath = Join-Path -Path $DVLSVariables.DVLSPath -ChildPath $keyFile
 
     $crtFile = "cert.crt"
     $crtTmpPath = Join-Path -Path $DVLSVariables.TmpFolder -ChildPath $crtFile
+    $crtDvlsPath = Join-Path -Path $DVLSVariables.DVLSPath -ChildPath $crtFile
 
     $pfxFile = "cert.pfx"
     $pfxTmpPath = Join-Path -Path $DVLSVariables.TmpFolder -ChildPath $pfxFile
@@ -372,6 +374,8 @@ if ($DVLSVariables.DVLSCertificate) {
     & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout $keyTmpPath -out $crtTmpPath -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=IP:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
     & openssl pkcs12 -export -out $pfxTmpPath -inkey $keyTmpPath -in $crtTmpPath -passout pass: > /dev/null 2>&1
 
+    & sudo Move-Item -Path $keyTmpPath -Destination $keyDvlsPath
+    & sudo Move-Item -Path $crtTmpPath -Destination $crtDvlsPath
     & sudo Move-Item -Path $pfxTmpPath -Destination $pfxDvlsPath
 
     $JSON = Get-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath "appsettings.json") | ConvertFrom-Json -Depth 100
