@@ -14,9 +14,9 @@ Param(
     [ValidateSet($Null, $True, $False)]
     [Bool] $DatabaseEncryptedConnection,
     [ValidateSet($Null, $True, $False)]
-    [Object] $DatabaseTrustServerCertificate,
+    [Bool] $DatabaseTrustServerCertificate,
     [ValidateSet($Null, $True, $False)]
-    [Object] $GenerateSelfSignedCertificate,
+    [Bool] $GenerateSelfSignedCertificate,
     [String] $ZipFile
 )
 

@@ -1,10 +1,8 @@
 # DVLS Scripted Installation For Linux
 
-You can use `install-dvls.ps1` or `install-dvls.sh` at your convenience.
-`install-dvls.sh` will install PowerShell for you if it is not yet installed.
-It will then proceed to run `install-dvls.ps1` for you, downloading it from this repository if necessary.
+You can use `install-dvls.ps1` or `install-dvls.sh` at your convenience. `install-dvls.sh` will install PowerShell for you if it is not yet installed. It will then proceed to run `install-dvls.ps1` for you, downloading it from this repository if necessary.
 
-This script assumes an accessible Microsoft SQL Server, either located on the same system or externally available.
+This script assumes an accessible Microsoft SQL Server, either located on the same system or externally available. In addition, at this time only SQL authentication is supported.
 
 You have two ways to run the script, either interactive with prompts, or non-interactive:
 
@@ -35,3 +33,40 @@ Copy and run this bash one-liner in a terminal:
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/Devolutions/ScriptLibrary/refs/heads/main/DVLSForLinux/install-dvls.sh" | bash
 ```
+
+## Non-Interactive Install Parameters
+
+**Bash**
+| Parameter                             | Description                                            |
+| ------------------------------------- | ------------------------------------------------------ |
+| `--dvls-hostname`                     | Specify the DVLS host name                             |
+| `--dvls-admin-email`                  | Specify the DVLS admin email                           |
+| `--database-host`                     | Specify the database host (defaults to `dvls`)         |
+| `--database-username`                 | Specify the database username                          |
+| `--database-password`                 | Specify the database password                          |
+| `--database-name`                     | Specify the database name                              |
+| `--zip-file`                          | Specify a zip file for the DVLS installation file      |
+| `--help`                              | Show a help message and exit                           |
+| `--no-confirm`                        | Do not confirm the action before proceeding            |
+| `--database-encrypted-connection`     | Enable or disable encrypted connection to the database |
+| `--database-trust-server-certificate` | Trust the database server certificate                  |
+| `--no-create-database`                | Do not create the database even if it does not exist   |
+| `--generate-self-signed-certificate`  | Generate a self-signed certificate                     |
+| `--disable-telemetry`                 | Disable telemetry                                      |
+
+**PowerShell**
+| Parameter                        | Description                                                                |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| `DVLSHostName`                   | Specify the DVLS host name                                                 |
+| `DVLSAdminEmail`                 | Specify the DVLS admin email                                               |
+| `DatabaseHost`                   | Specify the database host (defaults to `dvls`)                             |
+| `DatabaseUsername`               | Specify the database username                                              |
+| `DatabasePassword`               | Specify the database password                                              |
+| `DatabaseName`                   | Specify the database name                                                  |
+| `CreateDatabase`                 | Do not create the database even if it does not exist (defaults to `$True`) |
+| `EnableTelemetry`                | Enable or disable telemetry (defaults to `$True`)                          |
+| `Confirm`                        | Confirm the action before proceeding (defaults to `$True`)                 |
+| `DatabaseEncryptedConnection`    | Enable or disable encrypted connection to the database                     |
+| `DatabaseTrustServerCertificate` | Trust the database server certificate                                      |
+| `GenerateSelfSignedCertificate`  | Generate a self-signed certificate                                         |
+| `ZipFile`                        | Specify a zip file for the DVLS installation file                          |
