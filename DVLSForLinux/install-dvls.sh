@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-
+#!/bin/bash
 set -euo pipefail
 IFS=$'\n\t'
 
@@ -12,22 +11,16 @@ show_usage() {
   echo "  --database-host <DatabaseHost>           Specify the database host"
   echo "  --database-username <DatabaseUsername>   Specify the database username"
   echo "  --database-password <DatabasePassword>   Specify the database password"
+  echo "  --database-name <DatabaseName>           Specify the database name"
+  echo "  --zip-file <ZipFile>                     Specify a zip file for the DVLS installation file"
   echo
   echo "Flags:"
   echo "  -h, --help                               Show this help message and exit"
   echo "  -y, --no-confirm                         Do not confirm the action before proceeding"
-  echo
-  echo "  --database-encrypted-connection          Enable encrypted connection to the database"
-  echo "  --no-database-encrypted-connection       Disable encrypted connection to the database"
-  echo
+  echo "  --database-encrypted-connection          Enable or disable encrypted connection to the database"
   echo "  --database-trust-server-certificate      Trust the database server certificate"
-  echo "  --no-database-trust-server-certificate   Do not trust the database server certificate"
-  echo
   echo "  --no-create-database                     Do not create the database even if it does not exist"
-  echo
   echo "  --generate-self-signed-certificate       Generate a self-signed certificate"
-  echo "  --no-generate-self-signed-certificate    Do not generate a self-signed certificate"
-  echo
   echo "  --disable-telemetry                      Disable telemetry"
   echo
   echo "Example:"
@@ -35,7 +28,7 @@ show_usage() {
   exit 1
 }
 
-VALID_ARGS=$(getopt --options hy --longoptions help,dvls-hostname:,dvls-admin-email:,database-host:,database-username:,database-password:,database-encrypted-connection,no-database-encrypted-connection,database-trust-server-certificate,no-database-trust-server-certificate,no-create-database,generate-self-signed-certificate,no-generate-self-signed-certificate,disable-telemetry,no-confirm -- "$@")
+VALID_ARGS=$(getopt --options hy --longoptions help,dvls-hostname:,dvls-admin-email:,database-host:,database-username:,database-password:,database-name:,zip-file:,database-encrypted-connection,database-trust-server-certificate,no-create-database,generate-self-signed-certificate,disable-telemetry,no-confirm -- "$@")
 
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -45,9 +38,12 @@ eval set -- "$VALID_ARGS"
 
 args=()
 
-CREATE_DATABASE='$True'
-ENABLE_TELEMETRY='$True'
-CONFIRM='$True'
+DATABASE_ENCRYPTED_CONNECTION=false
+DATABASE_TRUST_SERVER_CERTIFICATE=false
+CREATE_DATABASE=true
+GENERATE_SELF_SIGNED_CERTIFICATE=false
+ENABLE_TELEMETRY=true
+CONFIRM=true
 
 while [ : ]; do
   case "$1" in
@@ -74,40 +70,36 @@ while [ : ]; do
       args+=("-DatabasePassword:$2")
       shift 2
       ;;
-    --database-encrypted-connection)
-      DATABASE_ENCRYPTED_CONNECTION='$True'
-      shift
+    --database-name)
+      args+=("-DatabaseName:$2")
+      shift 2
       ;;
-    --no-database-encrypted-connection)
-      DATABASE_ENCRYPTED_CONNECTION='$False'
+    --zip-file)
+      args+=("-ZipFile:$2")
+      shift 2
+      ;;
+    --database-encrypted-connection)
+      DATABASE_ENCRYPTED_CONNECTION=true
       shift
       ;;
     --database-trust-server-certificate)
-      DATABASE_TRUST_SERVER_CERTIFICATE='$True'
-      shift
-      ;;
-    --no-database-trust-server-certificate)
-      DATABASE_TRUST_SERVER_CERTIFICATE='$False'
+      DATABASE_TRUST_SERVER_CERTIFICATE=true
       shift
       ;;
     --no-create-database)
-      CREATE_DATABASE='$False'
+      CREATE_DATABASE=false
       shift
       ;;
     --generate-self-signed-certificate)
-      GENERATE_SELF_SIGNED_CERTIFICATE='$True'
-      shift
-      ;;
-    --no-generate-self-signed-certificate)
-      GENERATE_SELF_SIGNED_CERTIFICATE='$False'
+      GENERATE_SELF_SIGNED_CERTIFICATE=true
       shift
       ;;
     --disable-telemetry)
-      ENABLE_TELEMETRY='$False'
+      ENABLE_TELEMETRY=false
       shift
       ;;
     -y | --no-confirm)
-      CONFIRM='$False'
+      CONFIRM=false
       shift
       ;;
     --)
@@ -117,19 +109,7 @@ while [ : ]; do
   esac
 done
 
-args+=("-CreateDatabase:$CREATE_DATABASE" "-EnableTelemetry:$ENABLE_TELEMETRY" "-Confirm:$CONFIRM")
-
-if [[ -n "${DATABASE_ENCRYPTED_CONNECTION+x}" ]]; then
-  args+=("-DatabaseEncryptedConnection:$DATABASE_ENCRYPTED_CONNECTION")
-fi
-
-if [[ -n "${DATABASE_TRUST_SERVER_CERTIFICATE+x}" ]]; then
-  args+=("-DatabaseTrustServerCertificate:$DATABASE_TRUST_SERVER_CERTIFICATE")
-fi
-
-if [[ -n "${GENERATE_SELF_SIGNED_CERTIFICATE+x}" ]]; then
-  args+=("-GenerateSelfSignedCertificate:$GENERATE_SELF_SIGNED_CERTIFICATE")
-fi
+args+=("-DatabaseEncryptedConnection:$DATABASE_ENCRYPTED_CONNECTION" "-DatabaseTrustServerCertificate:$DATABASE_TRUST_SERVER_CERTIFICATE" "-CreateDatabase:$CREATE_DATABASE" "-GenerateSelfSignedCertificate:$GENERATE_SELF_SIGNED_CERTIFICATE" "-EnableTelemetry:$ENABLE_TELEMETRY" "-Confirm:$CONFIRM")
 
 if command -v pwsh 2>&1 >/dev/null; then
   PWSH_COMMAND="pwsh"
