@@ -20,6 +20,9 @@ Param(
     [String] $ZipFile
 )
 
+#region Setup variables
+
+# Retrieve PowerShell executable to support PowerShell Preview
 $PwshExecutable = (Get-Process -Id $pid).Path
 $DvlsForLinuxName = "Devolutions Server for Linux (Beta)"
 $originalLocation = (Get-Location).Path
@@ -70,8 +73,8 @@ $DVLSVariables = @{
 }
 
 if (-Not (Test-Path -Path $DVLSVariables.TmpFolder)) {
-    # Create the temporary directory we’ll use across the script.
-    New-Item -Path $DVLSVariables.TmpFolder -ItemType Directory
+    # Create the temporary directory we'll use across the script.
+    New-Item -Path $DVLSVariables.TmpFolder -ItemType Directory | Out-Null
 }
 
 if (Test-Path -Path $DVLSVariables.SystemDPath) {
@@ -111,6 +114,7 @@ else {
     $DVLSVariables.DatabaseTrustServerCertificate = ($Host.UI.PromptForChoice("", "Trust the database server certificate (default is no)?", @('&Yes', '&No'), 1)) ? $False : $True
 }
 
+# Allow for pre-created databases
 if ($CreateDatabase -And $CreateDatabase -Is [Bool]) {
     $DVLSVariables.CreateDatabase = [Bool]$CreateDatabase
 }
@@ -119,7 +123,7 @@ else {
 }
 
 if ($DVLSVariables.ZipFile -And -Not ((Get-Item -Path $DVLSVariables.ZipFile -ErrorAction 'SilentlyContinue').FullName)) {
-    Write-Error ""
+    Write-Error ("[{0}] Unable to locate passed zip file: {1}" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.ZipFile)
     Exit
 }
 
@@ -177,6 +181,7 @@ if ($Confirm) {
     Write-Warning "If the above values look correct, enter [Y] or press Enter to continue" -WarningAction Inquire
 }
 
+# Cache Sudo prompt for remainder of the script
 Write-Verbose ("[{0}] Requesting 'sudo -v' for cached credentials" -F (Get-Date -Format "yyyyMMddHHmmss"))
 & sudo -v
 
@@ -200,7 +205,9 @@ if (-Not [Bool](Get-Module -Name 'Devolutions.PowerShell')) {
     Write-Error ("[{0}] The Devolutions.PowerShell module failed to install, aborting installation" -F (Get-Date -Format "yyyyMMddHHmmss"))
     Exit
 }
+#endregion
 
+#region Setup users, groups, and directories
 Write-Host ("[{0}] Creating user ({1}), group ({2}), and directory ({3})" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup, $DVLSVariables.DVLSPath) -ForegroundColor Green
 
 & sudo $PwshExecutable -Command {
@@ -217,8 +224,9 @@ Write-Host ("[{0}] Creating user ({1}), group ({2}), and directory ({3})" -F (Ge
     & chmod 550 $DVLSVariables.DVLSPath
 } -Args $DVLSVariables
 
+# Allows user currently executing script to have membership in newly created group without relaunching script
 Write-Verbose ("[{0}] Switching group to '{1}'" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSGroup)
-& sg dvls -c "echo test > /dev/null 2>&1"
+& sg $DVLSVariables.DVLSGroup -c "echo test > /dev/null 2>&1"
 
 Write-Verbose ("[{0}] Validating users, groups, and directories" -F (Get-Date -Format "yyyyMMddHHmmss"))
 
@@ -247,7 +255,7 @@ if (-Not ((& stat -c %a $DVLSVariables.DVLSPath) -EQ '550')) {
     Exit
 }
 
-if ( -Not
+if (-Not
     (
         ((Get-Item -Path $DVLSVariables.DVLSPath).User -EQ $DVLSVariables.DVLSUser) -And
         ((Get-Item -Path $DVLSVariables.DVLSPath).Group -EQ $DVLSVariables.DVLSGroup)
@@ -256,10 +264,13 @@ if ( -Not
     Write-Error ("[{0}] User and group assignments on directory, '{1}', are incorrect" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath)
     Exit
 }
+#endregion
 
+#region Retrieve DVLS
 & sudo $PwshExecutable -Command {
     Param(
-        $DVLSVariables
+        $DVLSVariables,
+        $DVLSForLinuxName
     )
 
     If (-Not $DVLSVariables.ZipFile) {
@@ -286,7 +297,7 @@ if ( -Not
     & tar -xzf $DVLSFilePath -C $DVLSVariables.DVLSPath --strip-components=1
     
     Remove-Item -Path $DVLSFilePath
-} -Args $DVLSVariables
+} -Args $DVLSVariables, $DVLSForLinuxName
 
 Write-Host ("[{0}] Modifying permissions on '{1}'" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath) -ForegroundColor Green
 
@@ -318,7 +329,9 @@ if (-Not $AppSettingsExists) {
 }
 
 Set-Location -Path $DVLSVariables.DVLSPath | Out-Null
+#endregion
 
+#region Install DVLS
 Write-Host ("[{0}] Installing $DvlsForLinuxName" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
 
 $Params = @{
@@ -368,7 +381,13 @@ if ($DVLSVariables.DVLSCertificate) {
     $pfxTmpPath = Join-Path -Path $DVLSVariables.TmpFolder -ChildPath $pfxFile
     $pfxDvlsPath = Join-Path -Path $DVLSVariables.DVLSPath -ChildPath $pfxFile
 
-    & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout $keyTmpPath -out $crtTmpPath -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=IP:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
+
+    if ($DVLSVariables.DVLSHostName -Match "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$" -And [Bool]($DVLSVariables.DVLSHostName -As [IPAddress])) {
+        & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout $keyTmpPath -out $crtTmpPath -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=IP:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
+    } else {
+        & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout $keyTmpPath -out $crtTmpPath -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=DNS:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
+    }
+
     & openssl pkcs12 -export -out $pfxTmpPath -inkey $keyTmpPath -in $crtTmpPath -passout pass: > /dev/null 2>&1
 
     & sudo $PwshExecutable -Command {
@@ -443,7 +462,9 @@ if (-Not (Test-Path -Path $DVLSVariables.SystemDPath)) {
 }
 
 Set-Location -Path $originalLocation | Out-Null
+#endregion
 
+#region Start DVLS
 Write-Host ("[{0}] Starting $DvlsForLinuxName at '{1}' - 15 Second Sleep" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSURI) -ForegroundColor Green
 
 & sudo systemctl start dvls.service
@@ -469,5 +490,4 @@ if ($Result) {
 else {
     Write-Error ("[{0}] $DvlsForLinuxName failed to start" -F (Get-Date -Format "yyyyMMddHHmmss"))
 }
-
-
+#endregion
