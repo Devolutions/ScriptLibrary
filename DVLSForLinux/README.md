@@ -55,18 +55,18 @@ curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/Devoluti
 | `--disable-telemetry`                 | Disable telemetry                                      |
 
 **PowerShell**
-| Parameter                        | Description                                                                |
-| -------------------------------- | -------------------------------------------------------------------------- |
-| `DVLSHostName`                   | Specify the DVLS host name                                                 |
-| `DVLSAdminEmail`                 | Specify the DVLS admin email                                               |
-| `DatabaseHost`                   | Specify the database host (defaults to `dvls`)                             |
-| `DatabaseUsername`               | Specify the database username                                              |
-| `DatabasePassword`               | Specify the database password                                              |
-| `DatabaseName`                   | Specify the database name                                                  |
-| `CreateDatabase`                 | Do not create the database even if it does not exist (defaults to `$True`) |
-| `EnableTelemetry`                | Enable or disable telemetry (defaults to `$True`)                          |
-| `Confirm`                        | Confirm the action before proceeding (defaults to `$True`)                 |
-| `DatabaseEncryptedConnection`    | Enable or disable encrypted connection to the database                     |
-| `DatabaseTrustServerCertificate` | Trust the database server certificate                                      |
-| `GenerateSelfSignedCertificate`  | Generate a self-signed certificate                                         |
-| `ZipFile`                        | Specify a zip file for the DVLS installation file                          |
+| Parameter                         | Description                                                                |
+| --------------------------------- | -------------------------------------------------------------------------- |
+| `-DVLSHostName`                   | Specify the DVLS host name                                                 |
+| `-DVLSAdminEmail`                 | Specify the DVLS admin email                                               |
+| `-DatabaseHost`                   | Specify the database host (defaults to `dvls`)                             |
+| `-DatabaseUsername`               | Specify the database username                                              |
+| `-DatabasePassword`               | Specify the database password                                              |
+| `-DatabaseName`                   | Specify the database name                                                  |
+| `-CreateDatabase`                 | Do not create the database even if it does not exist (defaults to `$True`) |
+| `-EnableTelemetry`                | Enable or disable telemetry (defaults to `$True`)                          |
+| `-Confirm`                        | Confirm the action before proceeding (defaults to `$True`)                 |
+| `-DatabaseEncryptedConnection`    | Enable or disable encrypted connection to the database                     |
+| `-DatabaseTrustServerCertificate` | Trust the database server certificate                                      |
+| `-GenerateSelfSignedCertificate`  | Generate a self-signed certificate                                         |
+| `-ZipFile`                        | Specify a zip file for the DVLS installation file                          |
