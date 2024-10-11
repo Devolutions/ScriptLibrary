@@ -1,5 +1,6 @@
 #!/usr/bin/env pwsh
 
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', 'DatabasePassword')]
 Param(
     [String] $DVLSHostName,
     [String] $DVLSAdminEmail,
@@ -21,6 +22,7 @@ Param(
 
 $PwshExecutable = (Get-Process -Id $pid).Path
 $DvlsForLinuxName = "Devolutions Server for Linux (Beta)"
+$originalLocation = (Get-Location).Path
 
 Write-Host ("[{0}] Starting the $DvlsForLinuxName installation script" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
 
@@ -91,32 +93,32 @@ else {
     $DVLSVariables.DVLSURI = ("http://{0}:5000/" -F $DVLSVariables.DVLSHostName)
 }
 
-If ([String]::IsNullOrWhiteSpace($DVLSVariables.DatabaseName)) {
+if ([String]::IsNullOrWhiteSpace($DVLSVariables.DatabaseName)) {
     $DVLSVariables.DatabaseName = 'dvls'
 }
 
-If ($DatabaseEncryptedConnection -And $DatabaseEncryptedConnection -Is [Bool]) {
+if ($DatabaseEncryptedConnection -And $DatabaseEncryptedConnection -Is [Bool]) {
     $DVLSVariables.DatabaseEncryptedConnection = [Bool]$DatabaseEncryptedConnection
 }
-Else {
+else {
     $DVLSVariables.DatabaseEncryptedConnection = ($Host.UI.PromptForChoice("", "Is connection to DB encrypted (default is no)?", @('&Yes', '&No'), 1)) ? $False : $True
 }
 
-If ($DatabaseTrustServerCertificate -And $DatabaseTrustServerCertificate -Is [Bool]) {
+if ($DatabaseTrustServerCertificate -And $DatabaseTrustServerCertificate -Is [Bool]) {
     $DVLSVariables.DatabaseTrustServerCertificate = [Bool]$DatabaseTrustServerCertificate
 }
-Else {
+else {
     $DVLSVariables.DatabaseTrustServerCertificate = ($Host.UI.PromptForChoice("", "Trust the database server certificate (default is no)?", @('&Yes', '&No'), 1)) ? $False : $True
 }
 
-If ($CreateDatabase -And $CreateDatabase -Is [Bool]) {
+if ($CreateDatabase -And $CreateDatabase -Is [Bool]) {
     $DVLSVariables.CreateDatabase = [Bool]$CreateDatabase
 }
-Else {
+else {
     $DVLSVariables.CreateDatabase = ($Host.UI.PromptForChoice("", "Create the database (default is yes)?", @('&Yes', '&No'), 0)) ? $False : $True
 }
 
-If ($DVLSVariables.ZipFile -And -Not ((Get-Item -Path $DVLSVariables.ZipFile -ErrorAction 'SilentlyContinue').FullName)) {
+if ($DVLSVariables.ZipFile -And -Not ((Get-Item -Path $DVLSVariables.ZipFile -ErrorAction 'SilentlyContinue').FullName)) {
     Write-Error ""
     Exit
 }
@@ -211,8 +213,7 @@ Write-Host ("[{0}] Creating user ({1}), group ({2}), and directory ({3})" -F (Ge
     & usermod -a -G $DVLSVariables.DVLSGroup $DVLSVariables.DVLSUser
     & usermod -a -G $DVLSVariables.DVLSGroup $DVLSVariables.CurrentUser
     & mkdir -p $DVLSVariables.DVLSPath
-    & chown -R ("{0}:{1}" -F $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup) ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent
-    & chmod 550 ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent
+    & chown -R ("{0}:{1}" -F $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup) $DVLSVariables.DVLSPath
     & chmod 550 $DVLSVariables.DVLSPath
 } -Args $DVLSVariables
 
@@ -241,15 +242,13 @@ if (-Not ($validateDVLSGroupUsers -Contains $DVLSVariables.DVLSUser -And $valida
     Exit
 }
 
-if (-Not ((& stat -c %a ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent) -EQ '550' -And (& stat -c %a $DVLSVariables.DVLSPath) -EQ '550')) {
+if (-Not ((& stat -c %a $DVLSVariables.DVLSPath) -EQ '550')) {
     Write-Error ("[{0}] Permissions on '{1}' are incorrect" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath)
     Exit
 }
 
 if ( -Not
     (
-        ((Get-Item -Path ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent).User -EQ $DVLSVariables.DVLSUser) -And
-        ((Get-Item -Path ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent).Group -EQ $DVLSVariables.DVLSGroup) -And
         ((Get-Item -Path $DVLSVariables.DVLSPath).User -EQ $DVLSVariables.DVLSUser) -And
         ((Get-Item -Path $DVLSVariables.DVLSPath).Group -EQ $DVLSVariables.DVLSGroup)
     )
@@ -263,8 +262,6 @@ if ( -Not
         $DVLSVariables
     )
 
-    Set-Location -Path ([System.IO.DirectoryInfo]$DVLSVariables.DVLSPath).Parent | Out-Null
-
     If (-Not $DVLSVariables.ZipFile) {
         $Result = (Invoke-RestMethod -Method 'GET' -Uri $DVLSVariables.DVLSProductURL) -Split "`r"
 
@@ -274,14 +271,14 @@ if ( -Not
             "Hash"    = (($Result | Select-String DPSLinuxX64bin.hash) -Split "=")[-1].Trim()
         }
         
-        $DVLSFilePath = Join-Path -Path $DVLSVariables.$TmpFolder -ChildPath (([URI]$DVLSLinux.URL).Segments)[-1]
+        $DVLSFilePath = Join-Path -Path $DVLSVariables.TmpFolder -ChildPath (([URI]$DVLSLinux.URL).Segments)[-1]
 
         Write-Host ("[{0}] Downloading and extracting latest $DVLSForLinuxName release: {1}" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSLinux.Version) -ForegroundColor Green
 
         Invoke-RestMethod -Method 'GET' -Uri $DVLSLinux.URL -OutFile $DVLSFilePath | Out-Null
     }
     Else {
-        $ResolvedCopy = Copy-Item -Path $DVLSVariables.ZipFile -Destination $DVLSVariables.$TmpFolder -PassThru
+        $ResolvedCopy = Copy-Item -Path $DVLSVariables.ZipFile -Destination $DVLSVariables.TmpFolder -PassThru
 
         $DVLSFilePath = $ResolvedCopy.FullName
     }
@@ -374,9 +371,20 @@ if ($DVLSVariables.DVLSCertificate) {
     & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout $keyTmpPath -out $crtTmpPath -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=IP:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
     & openssl pkcs12 -export -out $pfxTmpPath -inkey $keyTmpPath -in $crtTmpPath -passout pass: > /dev/null 2>&1
 
-    & sudo Move-Item -Path $keyTmpPath -Destination $keyDvlsPath
-    & sudo Move-Item -Path $crtTmpPath -Destination $crtDvlsPath
-    & sudo Move-Item -Path $pfxTmpPath -Destination $pfxDvlsPath
+    & sudo $PwshExecutable -Command {
+        Param(
+            $keyTmpPath,
+            $keyDvlsPath,
+            $crtTmpPath,
+            $crtDvlsPath,
+            $pfxTmpPath,
+            $pfxDvlsPath
+        )
+
+        Move-Item -Path $keyTmpPath -Destination $keyDvlsPath
+        Move-Item -Path $crtTmpPath -Destination $crtDvlsPath
+        Move-Item -Path $pfxTmpPath -Destination $pfxDvlsPath
+    } -Args $keyTmpPath, $keyDvlsPath, $crtTmpPath, $crtDvlsPath, $pfxTmpPath, $pfxDvlsPath
 
     $JSON = Get-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath "appsettings.json") | ConvertFrom-Json -Depth 100
 
@@ -433,6 +441,8 @@ if (-Not (Test-Path -Path $DVLSVariables.SystemDPath)) {
     Write-Error ("[{0}] systemd unit file missing at '{1}'" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.SystemDPath)
     Exit
 }
+
+Set-Location -Path $originalLocation | Out-Null
 
 Write-Host ("[{0}] Starting $DvlsForLinuxName at '{1}' - 15 Second Sleep" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSURI) -ForegroundColor Green
 
