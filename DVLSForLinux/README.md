@@ -37,24 +37,29 @@ curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/Devoluti
 ## Non-Interactive Install Parameters
 
 **Bash**
-| Parameter                             | Description                                            |
-| ------------------------------------- | ------------------------------------------------------ |
-| `--dvls-hostname`                     | Specify the DVLS host name                             |
-| `--dvls-admin-email`                  | Specify the DVLS admin email                           |
-| `--database-host`                     | Specify the database host (defaults to `dvls`)         |
-| `--database-username`                 | Specify the database username                          |
-| `--database-password`                 | Specify the database password                          |
-| `--database-name`                     | Specify the database name                              |
-| `--zip-file`                          | Specify a zip file for the DVLS installation file      |
-| `--help`                              | Show a help message and exit                           |
-| `--no-confirm`                        | Do not confirm the action before proceeding            |
-| `--database-encrypted-connection`     | Enable or disable encrypted connection to the database |
-| `--database-trust-server-certificate` | Trust the database server certificate                  |
-| `--no-create-database`                | Do not create the database even if it does not exist   |
-| `--generate-self-signed-certificate`  | Generate a self-signed certificate                     |
-| `--disable-telemetry`                 | Disable telemetry                                      |
+
+| Parameter                                | Description                                          |
+| ---------------------------------------- | ---------------------------------------------------- |
+| `--dvls-hostname`                        | Specify the DVLS host name                           |
+| `--dvls-admin-email`                     | Specify the DVLS admin email                         |
+| `--database-host`                        | Specify the database host (defaults to `dvls`)       |
+| `--database-username`                    | Specify the database username                        |
+| `--database-password`                    | Specify the database password                        |
+| `--database-name`                        | Specify the database name                            |
+| `--zip-file`                             | Specify a zip file for the DVLS installation file    |
+| `--help`                                 | Show a help message and exit                         |
+| `--no-confirm`                           | Do not confirm the action before proceeding          |
+| `--database-encrypted-connection`        | Enable encrypted connection to the database          |
+| `--no-database-encrypted-connection`     | Disable encrypted connection to the database         |
+| `--database-trust-server-certificate`    | Trust the database server certificate                |
+| `--no-database-trust-server-certificate` | Do not trust the database server certificate         |
+| `--no-create-database`                   | Do not create the database even if it does not exist |
+| `--generate-self-signed-certificate`     | Generate a self-signed certificate                   |
+| `--no-generate-self-signed-certificate`  | Do not generate a self-signed certificate            |
+| `--disable-telemetry`                    | Disable telemetry                                    |
 
 **PowerShell**
+
 | Parameter                         | Description                                                                |
 | --------------------------------- | -------------------------------------------------------------------------- |
 | `-DVLSHostName`                   | Specify the DVLS host name                                                 |
