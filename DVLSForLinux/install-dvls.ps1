@@ -72,7 +72,7 @@ $DVLSVariables = @{
     'TmpFolder'                      = "/tmp/devolutions-dvls-installation-script/"
 }
 
-if (-Not (Test-Path -Path $DVLSVariables.TmpFolder)) {
+if (-not (Test-Path -Path $DVLSVariables.TmpFolder)) {
     # Create the temporary directory we'll use across the script.
     New-Item -Path $DVLSVariables.TmpFolder -ItemType Directory | Out-Null
 }
@@ -82,7 +82,7 @@ if (Test-Path -Path $DVLSVariables.SystemDPath) {
     Exit
 }
 
-if ($GenerateSelfSignedCertificate -Is [Bool]) {
+if ($GenerateSelfSignedCertificate -is [Bool]) {
     $DVLSVariables.DVLSCertificate = [Bool]$GenerateSelfSignedCertificate
 }
 else {
@@ -100,14 +100,14 @@ if ([String]::IsNullOrWhiteSpace($DVLSVariables.DatabaseName)) {
     $DVLSVariables.DatabaseName = 'dvls'
 }
 
-if ($DatabaseEncryptedConnection -And $DatabaseEncryptedConnection -Is [Bool]) {
+if ($DatabaseEncryptedConnection -and $DatabaseEncryptedConnection -is [Bool]) {
     $DVLSVariables.DatabaseEncryptedConnection = [Bool]$DatabaseEncryptedConnection
 }
 else {
     $DVLSVariables.DatabaseEncryptedConnection = ($Host.UI.PromptForChoice("", "Is connection to DB encrypted (default is no)?", @('&Yes', '&No'), 1)) ? $False : $True
 }
 
-if ($DatabaseTrustServerCertificate -And $DatabaseTrustServerCertificate -Is [Bool]) {
+if ($DatabaseTrustServerCertificate -and $DatabaseTrustServerCertificate -is [Bool]) {
     $DVLSVariables.DatabaseTrustServerCertificate = [Bool]$DatabaseTrustServerCertificate
 }
 else {
@@ -115,14 +115,14 @@ else {
 }
 
 # Allow for pre-created databases
-if ($CreateDatabase -And $CreateDatabase -Is [Bool]) {
+if ($CreateDatabase -and $CreateDatabase -is [Bool]) {
     $DVLSVariables.CreateDatabase = [Bool]$CreateDatabase
 }
 else {
     $DVLSVariables.CreateDatabase = ($Host.UI.PromptForChoice("", "Create the database (default is yes)?", @('&Yes', '&No'), 0)) ? $False : $True
 }
 
-if ($DVLSVariables.ZipFile -And -Not ((Get-Item -Path $DVLSVariables.ZipFile -ErrorAction 'SilentlyContinue').FullName)) {
+if ($DVLSVariables.ZipFile -and -not ((Get-Item -Path $DVLSVariables.ZipFile -ErrorAction 'SilentlyContinue').FullName)) {
     Write-Error ("[{0}] Unable to locate passed zip file: {1}" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.ZipFile)
     Exit
 }
@@ -145,7 +145,7 @@ $DVLSVariables | Select-Object -Property @(
     @{
         'Name'       = 'DatabaseEncryptedConnection'
         'Expression' = {
-            if ($PSItem.DatabaseEncryptedConnection -Eq $Null) {
+            if ($PSItem.DatabaseEncryptedConnection -eq $Null) {
                 'Undefined'
             }
             else {
@@ -156,7 +156,7 @@ $DVLSVariables | Select-Object -Property @(
     @{
         'Name'       = 'DatabaseTrustServerCertificate'
         'Expression' = {
-            if ($PSItem.DatabaseTrustServerCertificate -Eq $Null) {
+            if ($PSItem.DatabaseTrustServerCertificate -eq $Null) {
                 'Undefined'
             }
             else {
@@ -167,10 +167,10 @@ $DVLSVariables | Select-Object -Property @(
     @{
         'Name'       = 'ZipFile'
         'Expression' = {
-            If ($PSItem.ZipFile -EQ $Null) {
+            if ($PSItem.ZipFile -eq $Null) {
                 'Undefined'
             }
-            Else {
+            else {
                 $PSItem.ZipFile
             }
         }
@@ -185,7 +185,7 @@ if ($Confirm) {
 Write-Verbose ("[{0}] Requesting 'sudo -v' for cached credentials" -F (Get-Date -Format "yyyyMMddHHmmss"))
 & sudo -v
 
-if (-Not [Bool](Get-Module -ListAvailable -Name 'Devolutions.PowerShell')) {
+if (-not [Bool](Get-Module -ListAvailable -Name 'Devolutions.PowerShell')) {
     Write-Host ("[{0}] Installing Devolutions.PowerShell module for all users" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
 
     & sudo $PwshExecutable -Command {
@@ -201,7 +201,7 @@ catch {
     Exit
 }
 
-if (-Not [Bool](Get-Module -Name 'Devolutions.PowerShell')) {
+if (-not [Bool](Get-Module -Name 'Devolutions.PowerShell')) {
     Write-Error ("[{0}] The Devolutions.PowerShell module failed to install, aborting installation" -F (Get-Date -Format "yyyyMMddHHmmss"))
     Exit
 }
@@ -233,32 +233,32 @@ Write-Verbose ("[{0}] Validating users, groups, and directories" -F (Get-Date -F
 $validateDVLSUser = & id -u $DVLSVariables.DVLSUser
 $validateDVLSGroup = & getent group $DVLSVariables.DVLSGroup
 
-if (-Not $validateDVLSUser) {
+if (-not $validateDVLSUser) {
     Write-Error ("[{0}] User, '{1}', is missing" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSUser)
     Exit
 }
 
-if (-Not $validateDVLSGroup) {
+if (-not $validateDVLSGroup) {
     Write-Error ("[{0}] Group, '{1}', is missing" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSGroup)
     Exit
 }
 
 $validateDVLSGroupUsers = (($validateDVLSGroup -Split ":")[-1] -Split ",")
 
-if (-Not ($validateDVLSGroupUsers -Contains $DVLSVariables.DVLSUser -And $validateDVLSGroupUsers -Contains $DVLSVariables.CurrentUser)) {
+if (-not ($validateDVLSGroupUsers -Contains $DVLSVariables.DVLSUser -and $validateDVLSGroupUsers -Contains $DVLSVariables.CurrentUser)) {
     Write-Error ("[{0}] User, '{1}' and '{2}', are not members of the group, '{3}'" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSUser, $DVLSVariables.CurrentUser, $DVLSVariables.DVLSGroup)
     Exit
 }
 
-if (-Not ((& stat -c %a $DVLSVariables.DVLSPath) -EQ '550')) {
+if (-not ((& stat -c %a $DVLSVariables.DVLSPath) -eq '550')) {
     Write-Error ("[{0}] Permissions on '{1}' are incorrect" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath)
     Exit
 }
 
-if (-Not
+if (-not
     (
-        ((Get-Item -Path $DVLSVariables.DVLSPath).User -EQ $DVLSVariables.DVLSUser) -And
-        ((Get-Item -Path $DVLSVariables.DVLSPath).Group -EQ $DVLSVariables.DVLSGroup)
+        ((Get-Item -Path $DVLSVariables.DVLSPath).User -eq $DVLSVariables.DVLSUser) -and
+        ((Get-Item -Path $DVLSVariables.DVLSPath).Group -eq $DVLSVariables.DVLSGroup)
     )
 ) {
     Write-Error ("[{0}] User and group assignments on directory, '{1}', are incorrect" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath)
@@ -273,7 +273,7 @@ if (-Not
         $DVLSForLinuxName
     )
 
-    If (-Not $DVLSVariables.ZipFile) {
+    if (-not $DVLSVariables.ZipFile) {
         $Result = (Invoke-RestMethod -Method 'GET' -Uri $DVLSVariables.DVLSProductURL) -Split "`r"
 
         $DVLSLinux = [PSCustomObject]@{
@@ -288,7 +288,7 @@ if (-Not
 
         Invoke-RestMethod -Method 'GET' -Uri $DVLSLinux.URL -OutFile $DVLSFilePath | Out-Null
     }
-    Else {
+    else {
         $ResolvedCopy = Copy-Item -Path $DVLSVariables.ZipFile -Destination $DVLSVariables.TmpFolder -PassThru
 
         $DVLSFilePath = $ResolvedCopy.FullName
@@ -323,7 +323,7 @@ $AppSettingsExists = & sudo $PwshExecutable -Command {
     Test-Path -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json')
 } -Args $DVLSVariables
 
-if (-Not $AppSettingsExists) {
+if (-not $AppSettingsExists) {
     Write-Error ("[{0}] appsettings.json does not exist or is inaccessible" -F (Get-Date -Format "yyyyMMddHHmmss"))
     Exit
 }
@@ -382,7 +382,7 @@ if ($DVLSVariables.DVLSCertificate) {
     $pfxDvlsPath = Join-Path -Path $DVLSVariables.DVLSPath -ChildPath $pfxFile
 
 
-    if ($DVLSVariables.DVLSHostName -Match "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$" -And [Bool]($DVLSVariables.DVLSHostName -As [IPAddress])) {
+    if ($DVLSVariables.DVLSHostName -match "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$" -and [Bool]($DVLSVariables.DVLSHostName -As [IPAddress])) {
         & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout $keyTmpPath -out $crtTmpPath -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=IP:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
     } else {
         & openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout $keyTmpPath -out $crtTmpPath -subj ("/CN={0}" -F $DVLSVariables.DVLSHostName) -addext ("subjectAltName=DNS:{0}" -F $DVLSVariables.DVLSHostName) > /dev/null 2>&1
@@ -456,7 +456,7 @@ Alias=dvls.service
     & systemctl daemon-reload
 } -Args $DVLSVariables, $SystemDTemplate
 
-if (-Not (Test-Path -Path $DVLSVariables.SystemDPath)) {
+if (-not (Test-Path -Path $DVLSVariables.SystemDPath)) {
     Write-Error ("[{0}] systemd unit file missing at '{1}'" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.SystemDPath)
     Exit
 }
@@ -480,7 +480,7 @@ $Result = & systemctl list-units --type=service --all --no-pager dvls.service --
 if ($Result) {
     $ID, $Load, $Active, $Status, $Description = ($Result.Trim()) -Split '\s+', 5
 
-    if ($ID -And $Active -And ($Status -EQ 'running')) {
+    if ($ID -and $Active -and ($Status -eq 'running')) {
         Write-Host ("[{0}] $DvlsForLinuxName is running" -F (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
     }
     else {
