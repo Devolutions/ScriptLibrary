@@ -490,9 +490,9 @@ if ($DVLSVariables.DVLSCertificate)
             $pfxDvlsPath
         )
 
-        Move-Item -Path $keyTmpPath -Destination $keyDvlsPath
-        Move-Item -Path $crtTmpPath -Destination $crtDvlsPath
-        Move-Item -Path $pfxTmpPath -Destination $pfxDvlsPath
+        Move-Item -Path $keyTmpPath -Destination $keyDvlsPath -Force
+        Move-Item -Path $crtTmpPath -Destination $crtDvlsPath -Force
+        Move-Item -Path $pfxTmpPath -Destination $pfxDvlsPath -Force
     } -Args $keyTmpPath, $keyDvlsPath, $crtTmpPath, $crtDvlsPath, $pfxTmpPath, $pfxDvlsPath
 
     $JSON = Get-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json') | ConvertFrom-Json -Depth 100
