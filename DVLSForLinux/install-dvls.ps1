@@ -52,24 +52,24 @@ $DVLSVariables = @{
     'DVLSProductURL'                 = 'https://devolutions.net/productinfo.htm'
     'SystemDPath'                    = '/etc/systemd/system/dvls.service'
     'CurrentUser'                    = & logname
-    'DVLSHostName'                   = ($DVLSHostName ? $DVLSHostName.Trim() : (Read-Host 'Enter the hostname or IP of this server (what URL DVLS responds on)').Trim())
-    'DVLSURI'                        = ''
+    'DVLSHostName'                   = $Null
+    'DVLSURI'                        = $Null
     'DVLSAPP'                        = 'dvls'
     'DVLSPath'                       = '/opt/devolutions/dvls'
     'DVLSExecutable'                 = '/opt/devolutions/dvls/Devolutions.Server'
     'DVLSUser'                       = 'dvls'
     'DVLSGroup'                      = 'dvls'
-    'DatabaseHost'                   = ($DatabaseHost ? $DatabaseHost.Trim() : (Read-Host 'Enter the database host').Trim())
-    'DatabaseUsername'               = ($DatabaseUsername ? $DatabaseUsername.Trim() : (Read-Host 'Enter the database username').Trim())
-    'DatabasePassword'               = ($DatabasePassword ? $DatabasePassword.Trim() : (Read-Host 'Enter the database user password' -MaskInput).Trim())
-    'DatabaseName'                   = ($DatabaseName ? $DatabaseName.Trim() : (Read-Host "Enter the database name (press enter to use the default: 'dvls')").Trim())
+    'DatabaseHost'                   = $Null
+    'DatabaseUsername'               = $Null
+    'DatabasePassword'               = $Null
+    'DatabaseName'                   = $Null
     'DatabaseEncryptedConnection'    = $Null
     'DatabaseTrustServerCertificate' = $Null
     'CreateDatabase'                 = $CreateDatabase
     'EnableTelemetry'                = $EnableTelemetry
     'DVLSAdminUsername'              = 'dvls-admin'
     'DVLSAdminPassword'              = 'dvls-admin'
-    'DVLSAdminEmail'                 = ($DVLSAdminEmail ? $DVLSAdminEmail.Trim() : (Read-Host 'Enter the email to use for the DVLS administrative user').Trim())
+    'DVLSAdminEmail'                 = $Null
     'DVLSCertificate'                = $False
     'ZipFile'                        = ($ZipFile ? $ZipFile.Trim() : $Null)
     'TmpFolder'                      = '/tmp/devolutions-dvls-installation-script/'
@@ -125,6 +125,15 @@ if ($DVLSVariables.ZipFile -and -not ((Get-Item -Path $DVLSVariables.ZipFile -Er
     Write-Error ("[{0}] Unable to locate passed zip file: {1}" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.ZipFile)
     exit
 }
+
+# Prompt the user for all the missing information (interactive mode)
+
+$DVLSVariables.DVLSHostName = ($DVLSHostName ? $DVLSHostName.Trim() : (Read-Host 'Enter the hostname or IP of this server (what URL DVLS responds on)').Trim())
+$DVLSVariables.DatabaseHost = ($DatabaseHost ? $DatabaseHost.Trim() : (Read-Host 'Enter the database host').Trim())
+$DVLSVariables.DatabaseUsername = ($DatabaseUsername ? $DatabaseUsername.Trim() : (Read-Host 'Enter the database username').Trim())
+$DVLSVariables.DatabasePassword = ($DatabasePassword ? $DatabasePassword.Trim() : (Read-Host 'Enter the database user password' -MaskInput).Trim())
+$DVLSVariables.DatabaseName = ($DatabaseName ? $DatabaseName.Trim() : (Read-Host "Enter the database name (press enter to use the default: 'dvls')").Trim())
+$DVLSVariables.DVLSAdminEmail = ($DVLSAdminEmail ? $DVLSAdminEmail.Trim() : (Read-Host 'Enter the email to use for the DVLS administrative user').Trim())
 
 if ($GenerateSelfSignedCertificate -and $GenerateSelfSignedCertificate -is [bool])
 {
@@ -329,6 +338,8 @@ if (-not
         Write-Host ("[{0}] Downloading and extracting latest $DVLSForLinuxName release: {1}" -F (Get-Date -Format "yyyyMMddHHmmss"), $DVLSLinux.Version) -ForegroundColor Green
 
         Invoke-RestMethod -Method GET -Uri $DVLSLinux.URL -OutFile $DVLSFilePath | Out-Null
+
+        Write-Host "Installation file downloaded at $DVLSFilePath"
     }
     else
     {
