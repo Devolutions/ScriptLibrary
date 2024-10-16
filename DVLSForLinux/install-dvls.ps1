@@ -412,7 +412,8 @@ $Settings = Get-DPSAppSettings -ApplicationPath $DVLSVariables.DVLSPath
 
 $previousActionPreference = $ErrorActionPreference
 
-try {
+try
+{
     $ErrorActionPreference = "Stop"
 
     if ($DVLSVariables.CreateDatabase)
@@ -421,24 +422,33 @@ try {
     }
 
     Update-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -InstallationPath $DVLSVariables.DVLSPath
-} catch {
-    Write-Host -Foreground Red -Background Black "[{0}] Failed to create or update the database: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
+}
+catch
+{
+    Write-Host -Foreground Red -Background Black ("[{0}] Failed to create or update the database: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
     exit
-} finally {
+}
+finally
+{
     $ErrorActionPreference = $previousActionPreference
 }
 
-try {
+try
+{
     $ErrorActionPreference = "Stop"
 
     New-DPSDataSourceSettings -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
     New-DPSEncryptConfiguration -ApplicationPath $DVLSVariables.DVLSPath
     New-DPSDatabaseAppSettings -Configuration $Configuration
     New-DPSAdministrator -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -Name $DVLSVariables.DVLSAdminUsername -Password $DVLSVariables.DVLSAdminPassword -Email $DVLSVariables.DVLSAdminEmail
-} catch {
-    Write-Host -Foreground Red -Background Black "[{0}] Failed to update settings in the database: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
+}
+catch
+{
+    Write-Host -Foreground Red -Background Black ("[{0}] Failed to update settings in the database: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
     exit
-} finally {
+}
+finally
+{
     $ErrorActionPreference = $previousActionPreference
 }
 
@@ -494,14 +504,19 @@ if ($DVLSVariables.DVLSCertificate)
 
     $JSON | ConvertTo-Json -Depth 100 | Set-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json')
 
-    try {
+    try
+    {
         $ErrorActionPreference = "Stop"
 
         Set-DPSAccessUri -ApplicationPath $DVLSVariables.DVLSPath -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -AccessURI ("https://{0}:5000/" -f $DVLSVariables.DVLSHostName)
-    } catch {
-        Write-Host -Foreground Red -Background Black "[{0}] Failed to set the new DPS access URI: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
+    }
+    catch
+    {
+        Write-Host -Foreground Red -Background Black ("[{0}] Failed to set the new DPS access URI: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
         exit
-    } finally {
+    }
+    finally
+    {
         $ErrorActionPreference = $previousActionPreference
     }
 
