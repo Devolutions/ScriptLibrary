@@ -8,13 +8,13 @@ param(
     [string] $DatabaseUsername,
     [string] $DatabasePassword,
     [string] $DatabaseName,
-    [bool] $CreateDatabase = $True,
-    [bool] $EnableTelemetry = $True,
-    [bool] $Confirm = $True,
-    [Nullable[bool]] $KeepInstallationFile,
-    [Nullable[bool]] $DatabaseEncryptedConnection,
-    [Nullable[bool]] $DatabaseTrustServerCertificate,
-    [Nullable[bool]] $GenerateSelfSignedCertificate,
+    [string] $CreateDatabase = $True,
+    [string] $EnableTelemetry = $True,
+    [string] $Confirm = $True,
+    [string] $KeepInstallationFile,
+    [string] $DatabaseEncryptedConnection,
+    [string] $DatabaseTrustServerCertificate,
+    [string] $GenerateSelfSignedCertificate,
     [string] $ZipFile
 )
 
@@ -25,7 +25,7 @@ $PwshExecutable = (Get-Process -Id $pid).Path
 $DvlsForLinuxName = 'Devolutions Server for Linux (Beta)'
 $originalLocation = (Get-Location).Path
 
-Write-Host ("[{0}] Starting the $DvlsForLinuxName installation script" -f (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+Write-Host ("[{0}] Starting the {1} installation script" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName) -ForegroundColor Green
 
 # Test for sudo rights, without prompting for password.
 $sudoResult = & sudo -vn > /dev/null 2>&1 && sudo -ln > /dev/null 2>&1 
@@ -36,13 +36,31 @@ switch ($sudoResult)
     "*may run*" {}
     "*sorry*"
     {
-        Write-Error ("[{0}] $DvlsForLinuxName requires sudo privileges" -f (Get-Date -Format "yyyyMMddHHmmss"))
+        Write-Error ("[{0}] {1} requires sudo privileges" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName)
         exit
     }
     default
     {
-        Write-Error ("[{0}] $DvlsForLinuxName requires sudo privileges" -f (Get-Date -Format "yyyyMMddHHmmss"))
+        Write-Error ("[{0}] {1} requires sudo privileges" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName)
         exit
+    }
+}
+function ConvertTo-Boolean ($value)
+{
+    switch ($value)
+    {
+        {@(1, '1', 'true', '$true', 'yes', 'y', 'on', 'enabled') -contains $psitem}
+        {
+            $true
+        }
+        {@(0, '0', 'false', '$false', 'no', 'n', 'off', 'disabled') -contains $psitem}
+        {
+            $false
+        }
+        default
+        {
+            $null
+        }
     }
 }
 
@@ -63,20 +81,20 @@ $DVLSVariables = @{
     'DatabaseName'                   = $Null
     'DatabaseEncryptedConnection'    = $Null
     'DatabaseTrustServerCertificate' = $Null
-    'CreateDatabase'                 = $CreateDatabase
-    'EnableTelemetry'                = $EnableTelemetry
+    'CreateDatabase'                 = (ConvertTo-Boolean $CreateDatabase)
+    'EnableTelemetry'                = (ConvertTo-Boolean $EnableTelemetry)
     'DVLSAdminUsername'              = 'dvls-admin'
     'DVLSAdminPassword'              = 'dvls-admin'
     'DVLSAdminEmail'                 = $Null
     'DVLSCertificate'                = $False
     'ZipFile'                        = ($ZipFile ? $ZipFile.Trim() : $Null)
     'TmpFolder'                      = '/tmp/devolutions-dvls-installation-script/'
-    'KeepInstallationFile'           = $KeepInstallationFile
+    'KeepInstallationFile'           = (ConvertTo-Boolean $KeepInstallationFile)
 }
 
 if (Test-Path -Path $DVLSVariables.SystemDPath)
 {
-    Write-Error ("[{0}] An existing $DvlsForLinuxName SystemD Unit file already appears, aborting installation" -f (Get-Date -Format "yyyyMMddHHmmss"))
+    Write-Error ("[{0}] An existing {1} SystemD Unit file already appears, aborting installation" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName)
     exit
 }
 
@@ -134,9 +152,9 @@ $DVLSVariables.DatabasePassword = ($DatabasePassword ? $DatabasePassword.Trim() 
 $DVLSVariables.DatabaseName = ($DatabaseName ? $DatabaseName.Trim() : (Read-Host "Enter the database name (press enter to use the default: 'dvls')").Trim())
 $DVLSVariables.DVLSAdminEmail = ($DVLSAdminEmail ? $DVLSAdminEmail.Trim() : (Read-Host 'Enter the email to use for the DVLS administrative user').Trim())
 
-if ($GenerateSelfSignedCertificate -and $GenerateSelfSignedCertificate -is [bool])
+if ($GenerateSelfSignedCertificate -and [bool]::TryParse((ConvertTo-Boolean $GenerateSelfSignedCertificate), [ref]$null))
 {
-    $DVLSVariables.DVLSCertificate = [bool]$GenerateSelfSignedCertificate
+    $DVLSVariables.DVLSCertificate = (ConvertTo-Boolean $GenerateSelfSignedCertificate)
 }
 else
 {
@@ -157,18 +175,18 @@ if ([string]::IsNullOrWhiteSpace($DVLSVariables.DatabaseName))
     $DVLSVariables.DatabaseName = 'dvls'
 }
 
-if ($DatabaseEncryptedConnection -is [bool])
+if ($DatabaseEncryptedConnection -and [bool]::TryParse((ConvertTo-Boolean $DatabaseEncryptedConnection), [ref]$null))
 {
-    $DVLSVariables.DatabaseEncryptedConnection = [bool]$DatabaseEncryptedConnection
+    $DVLSVariables.DatabaseEncryptedConnection = (ConvertTo-Boolean $DatabaseEncryptedConnection)
 }
 else
 {
     $DVLSVariables.DatabaseEncryptedConnection = ($Host.UI.PromptForChoice("", "Is connection to DB encrypted (default is no)?", @('&Yes', '&No'), 1)) ? $False : $True
 }
 
-if ($DatabaseTrustServerCertificate -is [bool])
+if ($DatabaseTrustServerCertificate -and [bool]::TryParse((ConvertTo-Boolean $DatabaseTrustServerCertificate), [ref]$null))
 {
-    $DVLSVariables.DatabaseTrustServerCertificate = [bool]$DatabaseTrustServerCertificate
+    $DVLSVariables.DatabaseTrustServerCertificate = (ConvertTo-Boolean $DatabaseTrustServerCertificate)
 }
 else
 {
@@ -176,9 +194,9 @@ else
 }
 
 # Allow for pre-created databases.
-if ($CreateDatabase -is [bool])
+if ($CreateDatabase -and [bool]::TryParse((ConvertTo-Boolean $CreateDatabase), [ref]$null))
 {
-    $DVLSVariables.CreateDatabase = [bool]$CreateDatabase
+    $DVLSVariables.CreateDatabase = (ConvertTo-Boolean $CreateDatabase)
 }
 else
 {
@@ -336,11 +354,11 @@ if (-not
         
         $DVLSFilePath = Join-Path -Path $DVLSVariables.TmpFolder -ChildPath (([System.Uri]$DVLSLinux.URL).Segments)[-1]
 
-        Write-Host ("[{0}] Downloading and extracting latest $DVLSForLinuxName release: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSLinux.Version) -ForegroundColor Green
+        Write-Host ("[{0}] Downloading and extracting latest {1} release: {2}" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSForLinuxName, $DVLSLinux.Version) -ForegroundColor Green
 
         Invoke-RestMethod -Method GET -Uri $DVLSLinux.URL -OutFile $DVLSFilePath | Out-Null
 
-        Write-Host ("[{0}] Installation file downloaded at $DVLSFilePath" -f (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+        Write-Host ("[{0}] Installation file downloaded at {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSFilePath) -ForegroundColor Green
 
         $keep = $False
     }
@@ -351,19 +369,19 @@ if (-not
         $DVLSFilePath = $ResolvedCopy.FullName
     }
 
-    Write-Host ("[{0}] Extracting $DVLSFilePath to ${DVLSVariables.DVLSPath}" -f (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+    Write-Host ("[{0}] Extracting {1} to {2}" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSFilePath, $DVLSVariables.DVLSPath) -ForegroundColor Green
 
     & tar -xzf $DVLSFilePath -C $DVLSVariables.DVLSPath --strip-components=1
 
     # Override with the cmdlet parameter if specified.
-    if ($DVLSVariables.KeepInstallationFile -is [bool])
+    if ($DVLSVariables.KeepInstallationFile -and [bool]::TryParse((ConvertTo-Boolean $DVLSVariables.KeepInstallationFile), [ref]$null))
     {
         $keep = $DVLSVariables.KeepInstallationFile
     }
 
     if (-not $keep)
     {
-        Write-Host ("[{0}] Removing $DVLSFilePath" -f (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+        Write-Host ("[{0}] Removing {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSFilePath) -ForegroundColor Green
         Remove-Item -Path $DVLSFilePath
     }
 } -Args $DVLSVariables, $DVLSForLinuxName
@@ -402,7 +420,7 @@ Set-Location -Path $DVLSVariables.DVLSPath | Out-Null
 #endregion
 
 #region Install DVLS
-Write-Host ("[{0}] Installing $DvlsForLinuxName" -f (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+Write-Host ("[{0}] Installing {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName) -ForegroundColor Green
 
 $Params = @{
     'DatabaseHost'           = $DVLSVariables.DatabaseHost
@@ -440,7 +458,7 @@ try
 }
 catch
 {
-    Write-Host -Foreground Red -Background Black ("[{0}] Failed to create or update the database: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
+    Write-Error ("[{0}] Failed to create or update the database: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem)
     exit
 }
 finally
@@ -459,7 +477,7 @@ try
 }
 catch
 {
-    Write-Host -Foreground Red -Background Black ("[{0}] Failed to update settings in the database: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
+    Write-Error ("[{0}] Failed to update settings in the database: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem)
     exit
 }
 finally
@@ -527,7 +545,7 @@ if ($DVLSVariables.DVLSCertificate)
     }
     catch
     {
-        Write-Host -Foreground Red -Background Black ("[{0}] Failed to set the new DPS access URI: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
+        Write-Error ("[{0}] Failed to set the new DPS access URI: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem)
         exit
     }
     finally
@@ -586,13 +604,13 @@ Set-Location -Path $originalLocation | Out-Null
 #endregion
 
 #region Start DVLS
-Write-Host ("[{0}] Starting $DvlsForLinuxName at '{1}' - 15 Second Sleep" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSURI) -ForegroundColor Green
+Write-Host ("[{0}] Starting {1} at '{2}' - 15 Second Sleep" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName, $DVLSVariables.DVLSURI) -ForegroundColor Green
 
 & sudo systemctl start dvls.service
 
 Start-Sleep -Seconds 15
 
-Write-Host ("[{0}] Restart $DvlsForLinuxName at '{1}'" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSURI) -ForegroundColor Green
+Write-Host ("[{0}] Restart {1} at '{2}'" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName, $DVLSVariables.DVLSURI) -ForegroundColor Green
 
 & sudo systemctl restart dvls.service
 
@@ -604,15 +622,15 @@ if ($Result)
 
     if ($ID -and $Active -and ($Status -eq 'running'))
     {
-        Write-Host ("[{0}] $DvlsForLinuxName is running" -f (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+        Write-Host ("[{0}] {1} is running" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName) -ForegroundColor Green
     }
     else
     {
-        Write-Error ("[{0}] $DvlsForLinuxName service status was not found" -f (Get-Date -Format "yyyyMMddHHmmss"))
+        Write-Error ("[{0}] {1} service status was not found" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName)
     }
 }
 else
 {
-    Write-Error ("[{0}] $DvlsForLinuxName failed to start" -f (Get-Date -Format "yyyyMMddHHmmss"))
+    Write-Error ("[{0}] {1} failed to start" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName)
 }
 #endregion
