@@ -1,6 +1,16 @@
-# DVLS Scripted Installation For Linux
+# Devolutions Server Scripted Installation For Linux (Beta)
 
-You can use `install-dvls.ps1` or `install-dvls.sh` at your convenience. `install-dvls.sh` will install PowerShell for you if it is not yet installed. It will then proceed to run `install-dvls.ps1` for you, downloading it from this repository if necessary.
+Starting with the Devolutions Server release 2024.3.2.0, Devolutions Server is now available for Linux as a beta. Using Microsoft Kestrel as the built-in web server and Microsoft PowerShell 7 for command-line installation, there is no need for the GUI installation through Devolutions Console.
+
+> [!CAUTION]
+> Devolutions Server for Linux is currently only in beta, and not yet suitable for production use.
+
+## Prerequisites
+- **Ubuntu 22.04** - Devolutions Server may work in other Linux distributions, and other Ubuntu versions, but Ubuntu 22.04 is the currently tested release.
+- **Microsoft PowerShell 7** - The current ]PowerShell version tested is 7.4.5](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux?view=powershell-7.4).
+- **Microsoft SQL Server (MSSQL)** - You may [install MSSQL locally](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-overview?view=sql-server-ver16), as documented below, or connect to an external MSSQL instance.
+
+You can use `install-dvls.ps1` or `install-dvls.sh` at your convenience. `install-dvls.sh` will install the latest PowerShell version for you if it is not yet installed. It will then proceed to run `install-dvls.ps1` for you, downloading it from this repository if necessary.
 
 This script assumes an accessible Microsoft SQL Server, either located on the same system or externally available. In addition, at this time only SQL authentication is supported.
 
