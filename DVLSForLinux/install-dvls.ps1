@@ -410,7 +410,6 @@ New-DPSAppsettings -Configuration $Configuration
 
 $Settings = Get-DPSAppSettings -ApplicationPath $DVLSVariables.DVLSPath
 
-
 $previousActionPreference = $ErrorActionPreference
 
 try {
