@@ -560,6 +560,7 @@ ExecStart=$($DVLSVariables.DVLSExecutable)
 WorkingDirectory=$($DVLSVariables.DVLSPath)
 KillSignal=SIGINT
 SyslogIdentifier=dvls
+Environment="SCHEDULER_EMBEDDED=true"
 [Install]
 WantedBy=multi-user.target
 Alias=dvls.service
