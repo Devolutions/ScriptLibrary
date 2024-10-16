@@ -410,17 +410,38 @@ New-DPSAppsettings -Configuration $Configuration
 
 $Settings = Get-DPSAppSettings -ApplicationPath $DVLSVariables.DVLSPath
 
-if ($DVLSVariables.CreateDatabase)
-{
-    New-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
+
+$previousActionPreference = $ErrorActionPreference
+
+try {
+    $ErrorActionPreference = "Stop"
+
+    if ($DVLSVariables.CreateDatabase)
+    {
+        New-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
+    }
+
+    Update-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -InstallationPath $DVLSVariables.DVLSPath
+} catch {
+    Write-Host -Foreground Red -Background Black "Failed to create or update the database: $_"
+    exit
+} finally {
+    $ErrorActionPreference = $previousActionPreference
 }
 
-Update-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -InstallationPath $DVLSVariables.DVLSPath
+try {
+    $ErrorActionPreference = "Stop"
 
-New-DPSDataSourceSettings -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
-New-DPSEncryptConfiguration -ApplicationPath $DVLSVariables.DVLSPath
-New-DPSDatabaseAppSettings -Configuration $Configuration
-New-DPSAdministrator -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -Name $DVLSVariables.DVLSAdminUsername -Password $DVLSVariables.DVLSAdminPassword -Email $DVLSVariables.DVLSAdminEmail
+    New-DPSDataSourceSettings -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
+    New-DPSEncryptConfiguration -ApplicationPath $DVLSVariables.DVLSPath
+    New-DPSDatabaseAppSettings -Configuration $Configuration
+    New-DPSAdministrator -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -Name $DVLSVariables.DVLSAdminUsername -Password $DVLSVariables.DVLSAdminPassword -Email $DVLSVariables.DVLSAdminEmail
+} catch {
+    Write-Host -Foreground Red -Background Black "Failed to update settings in the database: $_"
+    exit
+} finally {
+    $ErrorActionPreference = $previousActionPreference
+}
 
 if ($DVLSVariables.DVLSCertificate)
 {
@@ -474,7 +495,16 @@ if ($DVLSVariables.DVLSCertificate)
 
     $JSON | ConvertTo-Json -Depth 100 | Set-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json')
 
-    Set-DPSAccessUri -ApplicationPath $DVLSVariables.DVLSPath -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -AccessURI ("https://{0}:5000/" -f $DVLSVariables.DVLSHostName)
+    try {
+        $ErrorActionPreference = "Stop"
+
+        Set-DPSAccessUri -ApplicationPath $DVLSVariables.DVLSPath -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -AccessURI ("https://{0}:5000/" -f $DVLSVariables.DVLSHostName)
+    } catch {
+        Write-Host -Foreground Red -Background Black "Failed to set the new DPS access URI: $_"
+        exit
+    } finally {
+        $ErrorActionPreference = $previousActionPreference
+    }
 
     & sudo $PwshExecutable -Command {
         param(
