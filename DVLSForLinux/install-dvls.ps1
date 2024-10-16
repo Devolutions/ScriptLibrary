@@ -11,12 +11,9 @@ param(
     [bool] $CreateDatabase = $True,
     [bool] $EnableTelemetry = $True,
     [bool] $Confirm = $True,
-    [ValidateSet($Null, $True, $False)]
-    [bool] $DatabaseEncryptedConnection,
-    [ValidateSet($Null, $True, $False)]
-    [bool] $DatabaseTrustServerCertificate,
-    [ValidateSet($Null, $True, $False)]
-    [bool] $GenerateSelfSignedCertificate,
+    [Nullable[bool]] $DatabaseEncryptedConnection,
+    [Nullable[bool]] $DatabaseTrustServerCertificate,
+    [Nullable[bool]] $GenerateSelfSignedCertificate,
     [string] $ZipFile
 )
 
@@ -158,7 +155,7 @@ if ([string]::IsNullOrWhiteSpace($DVLSVariables.DatabaseName))
     $DVLSVariables.DatabaseName = 'dvls'
 }
 
-if ($DatabaseEncryptedConnection -and $DatabaseEncryptedConnection -is [bool])
+if ($DatabaseEncryptedConnection -is [bool])
 {
     $DVLSVariables.DatabaseEncryptedConnection = [bool]$DatabaseEncryptedConnection
 }
@@ -167,7 +164,7 @@ else
     $DVLSVariables.DatabaseEncryptedConnection = ($Host.UI.PromptForChoice("", "Is connection to DB encrypted (default is no)?", @('&Yes', '&No'), 1)) ? $False : $True
 }
 
-if ($DatabaseTrustServerCertificate -and $DatabaseTrustServerCertificate -is [bool])
+if ($DatabaseTrustServerCertificate -is [bool])
 {
     $DVLSVariables.DatabaseTrustServerCertificate = [bool]$DatabaseTrustServerCertificate
 }
@@ -176,8 +173,8 @@ else
     $DVLSVariables.DatabaseTrustServerCertificate = ($Host.UI.PromptForChoice("", "Trust the database server certificate (default is no)?", @('&Yes', '&No'), 1)) ? $False : $True
 }
 
-# Allow for pre-created databases
-if ($CreateDatabase -and $CreateDatabase -is [bool])
+# Allow for pre-created databases.
+if ($CreateDatabase -is [bool])
 {
     $DVLSVariables.CreateDatabase = [bool]$CreateDatabase
 }
