@@ -422,7 +422,7 @@ try {
 
     Update-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -InstallationPath $DVLSVariables.DVLSPath
 } catch {
-    Write-Host -Foreground Red -Background Black "Failed to create or update the database: $_"
+    Write-Host -Foreground Red -Background Black "[{0}] Failed to create or update the database: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
     exit
 } finally {
     $ErrorActionPreference = $previousActionPreference
@@ -436,7 +436,7 @@ try {
     New-DPSDatabaseAppSettings -Configuration $Configuration
     New-DPSAdministrator -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -Name $DVLSVariables.DVLSAdminUsername -Password $DVLSVariables.DVLSAdminPassword -Email $DVLSVariables.DVLSAdminEmail
 } catch {
-    Write-Host -Foreground Red -Background Black "Failed to update settings in the database: $_"
+    Write-Host -Foreground Red -Background Black "[{0}] Failed to update settings in the database: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
     exit
 } finally {
     $ErrorActionPreference = $previousActionPreference
@@ -499,7 +499,7 @@ if ($DVLSVariables.DVLSCertificate)
 
         Set-DPSAccessUri -ApplicationPath $DVLSVariables.DVLSPath -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -AccessURI ("https://{0}:5000/" -f $DVLSVariables.DVLSHostName)
     } catch {
-        Write-Host -Foreground Red -Background Black "Failed to set the new DPS access URI: $_"
+        Write-Host -Foreground Red -Background Black "[{0}] Failed to set the new DPS access URI: $_" -f (Get-Date -Format "yyyyMMddHHmmss"))
         exit
     } finally {
         $ErrorActionPreference = $previousActionPreference
