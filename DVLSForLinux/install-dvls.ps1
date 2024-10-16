@@ -11,6 +11,7 @@ param(
     [bool] $CreateDatabase = $True,
     [bool] $EnableTelemetry = $True,
     [bool] $Confirm = $True,
+    [Nullable[bool]] $KeepInstallationFile,
     [Nullable[bool]] $DatabaseEncryptedConnection,
     [Nullable[bool]] $DatabaseTrustServerCertificate,
     [Nullable[bool]] $GenerateSelfSignedCertificate,
@@ -70,6 +71,7 @@ $DVLSVariables = @{
     'DVLSCertificate'                = $False
     'ZipFile'                        = ($ZipFile ? $ZipFile.Trim() : $Null)
     'TmpFolder'                      = '/tmp/devolutions-dvls-installation-script/'
+    'KeepInstallationFile'           = $KeepInstallationFile
 }
 
 if (Test-Path -Path $DVLSVariables.SystemDPath)
@@ -320,6 +322,8 @@ if (-not
         $DVLSForLinuxName
     )
 
+    $keep = $True
+
     if (-not $DVLSVariables.ZipFile)
     {
         $Result = (Invoke-RestMethod -Method GET -Uri $DVLSVariables.DVLSProductURL) -Split "`r"
@@ -336,7 +340,9 @@ if (-not
 
         Invoke-RestMethod -Method GET -Uri $DVLSLinux.URL -OutFile $DVLSFilePath | Out-Null
 
-        Write-Host "Installation file downloaded at $DVLSFilePath"
+        Write-Host ("[{0}] Installation file downloaded at $DVLSFilePath" -f (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+
+        $keep = $False
     }
     else
     {
@@ -344,10 +350,22 @@ if (-not
 
         $DVLSFilePath = $ResolvedCopy.FullName
     }
-    
+
+    Write-Host ("[{0}] Extracting $DVLSFilePath to ${DVLSVariables.DVLSPath}" -f (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+
     & tar -xzf $DVLSFilePath -C $DVLSVariables.DVLSPath --strip-components=1
-    
-    Remove-Item -Path $DVLSFilePath
+
+    # Override with the cmdlet parameter if specified.
+    if ($DVLSVariables.KeepInstallationFile -is [bool])
+    {
+        $keep = $DVLSVariables.KeepInstallationFile
+    }
+
+    if (-not $keep)
+    {
+        Write-Host ("[{0}] Removing $DVLSFilePath" -f (Get-Date -Format "yyyyMMddHHmmss")) -ForegroundColor Green
+        Remove-Item -Path $DVLSFilePath
+    }
 } -Args $DVLSVariables, $DVLSForLinuxName
 
 Write-Host ("[{0}] Modifying permissions on '{1}'" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath) -ForegroundColor Green

@@ -57,6 +57,8 @@ curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/Devoluti
 | `--generate-self-signed-certificate`     | Generate a self-signed certificate                   |
 | `--no-generate-self-signed-certificate`  | Do not generate a self-signed certificate            |
 | `--disable-telemetry`                    | Disable telemetry                                    |
+| `--keep-installation-file`               | Keep the installation file after extraction          |
+| `--no-keep-installation-file`            | Delete the installation file after extraction        |
 
 **PowerShell**
 
@@ -75,3 +77,4 @@ curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/Devoluti
 | `-DatabaseTrustServerCertificate` | Trust the database server certificate                                      |
 | `-GenerateSelfSignedCertificate`  | Generate a self-signed certificate                                         |
 | `-ZipFile`                        | Specify a zip file for the DVLS installation file                          |
+| `-KeepInstallationFile`           | Specify whether the installation file should be removed after extraction   |

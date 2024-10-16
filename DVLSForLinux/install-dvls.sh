@@ -32,12 +32,15 @@ show_usage() {
   echo
   echo "  --disable-telemetry                      Disable telemetry"
   echo
+  echo "  --keep-installation-file                 Keep the installation file after extraction"
+  echo "  --no-keep-installation-file              Delete the installation file after extraction"
+  echo
   echo "Example:"
   echo "  $0 --dvls-hostname mydvls --dvls-admin-email admin@example.com --database-host localhost --database-username sa --database-password pass --disable-telemetry"
   exit 1
 }
 
-VALID_ARGS=$(getopt --options hy --longoptions help,dvls-hostname:,dvls-admin-email:,database-host:,database-username:,database-password:,database-name:,zip-file:,database-encrypted-connection,no-database-encrypted-connection,database-trust-server-certificate,no-database-trust-server-certificate,no-create-database,generate-self-signed-certificate,no-generate-self-signed-certificate,disable-telemetry,no-confirm -- "$@")
+VALID_ARGS=$(getopt --options hy --longoptions help,dvls-hostname:,dvls-admin-email:,database-host:,database-username:,database-password:,database-name:,zip-file:,database-encrypted-connection,no-database-encrypted-connection,database-trust-server-certificate,no-database-trust-server-certificate,no-create-database,generate-self-signed-certificate,no-generate-self-signed-certificate,disable-telemetry,no-confirm,keep-installation-file,no-keep-installation-file -- "$@")
 
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -120,6 +123,14 @@ while [ : ]; do
       CONFIRM='$False'
       shift
       ;;
+    --keep-installation-file)
+      KEEP_INSTALLATION_FILE='$True'
+      shift
+      ;;
+    --no-keep-installation-file)
+      KEEP_INSTALLATION_FILE='$False'
+      shift
+      ;;
     --)
       shift; 
       break 
@@ -139,6 +150,10 @@ fi
 
 if [[ -n "${GENERATE_SELF_SIGNED_CERTIFICATE+x}" ]]; then
   args+=("-GenerateSelfSignedCertificate:$GENERATE_SELF_SIGNED_CERTIFICATE")
+fi
+
+if [[ -n "${KEEP_INSTALLATION_FILE+x}" ]]; then
+  args+=("-KeepInstallationFile:$KEEP_INSTALLATION_FILE")
 fi
 
 if command -v pwsh 2>&1 >/dev/null; then
