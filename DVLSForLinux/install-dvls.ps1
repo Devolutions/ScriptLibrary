@@ -130,7 +130,7 @@ if ($DVLSVariables.ZipFile -and -not ((Get-Item -Path $DVLSVariables.ZipFile -Er
 $DVLSVariables.DVLSHostName = ($DVLSHostName ? $DVLSHostName.Trim() : (Read-Host 'Enter the hostname or IP of this server (what URL DVLS responds on)').Trim())
 $DVLSVariables.DatabaseHost = ($DatabaseHost ? $DatabaseHost.Trim() : (Read-Host 'Enter the database host').Trim())
 $DVLSVariables.DatabaseUsername = ($DatabaseUsername ? $DatabaseUsername.Trim() : (Read-Host 'Enter the database username').Trim())
-$DVLSVariables.DatabasePassword = ($DatabasePassword ? $DatabasePassword.Trim() : (Read-Host 'Enter the database user password' -MaskInput).Trim())
+$DVLSVariables.DatabasePassword = ($DatabasePassword ? $DatabasePassword : (Read-Host 'Enter the database user password' -MaskInput))
 $DVLSVariables.DatabaseName = ($DatabaseName ? $DatabaseName.Trim() : (Read-Host "Enter the database name (press enter to use the default: 'dvls')").Trim())
 $DVLSVariables.DVLSAdminEmail = ($DVLSAdminEmail ? $DVLSAdminEmail.Trim() : (Read-Host 'Enter the email to use for the DVLS administrative user').Trim())
 
