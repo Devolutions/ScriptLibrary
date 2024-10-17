@@ -9,7 +9,7 @@ Starting with the Devolutions Server release 2024.3.2.0, Devolutions Server is n
 
 - **Ubuntu 22.04** - Devolutions Server may work in other Linux distributions, and other Ubuntu versions, but Ubuntu 22.04 is the currently tested release.
 - **Microsoft PowerShell 7** - The current [PowerShell version tested is 7.4.5](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux?view=powershell-7.4).
-- **Microsoft SQL Server (MSSQL)** - You may [install MSSQL locally](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-overview?view=sql-server-ver16), as documented below, or connect to an external MSSQL instance.
+- **Microsoft SQL Server (MSSQL)** - You may [install MSSQL locally, currently tested with SQL Server 2022,](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-overview?view=sql-server-ver16) or connect to an external MSSQL instance.
 
 ## Installing Devolutions Server for Linux (Beta)
 
