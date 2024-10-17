@@ -6,10 +6,10 @@ Starting with the Devolutions Server release 2024.3.2.0, Devolutions Server is n
 > Devolutions Server for Linux is currently only in beta, and not yet suitable for production use.
 
 ## Prerequisites
-- **Ubuntu 22.04** - Devolutions Server may work in other Linux distributions, and other Ubuntu versions, but Ubuntu 22.04 is the currently tested release.
-- **Microsoft PowerShell 7** - The current ]PowerShell version tested is 7.4.5](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux?view=powershell-7.4).
-- **Microsoft SQL Server (MSSQL)** - You may [install MSSQL locally](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-overview?view=sql-server-ver16), as documented below, or connect to an external MSSQL instance.
 
+- **Ubuntu 22.04** - Devolutions Server may work in other Linux distributions, and other Ubuntu versions, but Ubuntu 22.04 is the currently tested release.
+- **Microsoft PowerShell 7** - The current [PowerShell version tested is 7.4.5](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux?view=powershell-7.4).
+- **Microsoft SQL Server (MSSQL)** - You may [install MSSQL locally](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-overview?view=sql-server-ver16), as documented below, or connect to an external MSSQL instance.
 
 ## Installing Devolutions Server for Linux (Beta)
 
@@ -19,27 +19,11 @@ This script assumes an accessible Microsoft SQL Server, either located on the sa
 
 You have two ways to run the script, either interactive with prompts, or non-interactive:
 
-- Interactive:
+### Interactive
 
-  ```pwsh
-  ./install-dvls.ps1
-  ```
+There are two ways of running the interactive installation.
 
-  ```bash
-  ./install-dvls.sh
-  ```
-
-- Non-interactive:
-
-  ```pwsh
-  ./install-dvls.ps1 -DVLSHostName "MYHOST" -DVLSAdminEmail "admin@replaceme.com" -DatabaseHost "MYDBHOST" -DatabaseUsername "MYDBUSERNAME" -DatabasePassword "MYSTRONGPASSWORD" -GenerateSelfSignedCertificate -Confirm:$False
-  ```
-
-  ```bash
-  ./install-dvls.sh --dvls-hostname "MYHOST" --dvls-admin-email "admin@replaceme.com" --database-host "MYDBHOST" --database-username "MYDBUSERNAME" --database-password "MYSTRONGPASSWORD" --generate-self-signed-certificate --no-confirm
-  ```
-
-## Quick Start One-liner
+### Quick Start One-Liner
 
 Copy and run this bash one-liner in a terminal:
 
@@ -47,7 +31,37 @@ Copy and run this bash one-liner in a terminal:
 curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/Devolutions/ScriptLibrary/refs/heads/main/DVLSForLinux/install-dvls.sh" | bash
 ```
 
-## Non-Interactive Install Parameters
+### By Downloading The Script
+
+**PowerShell**:
+
+```pwsh
+./install-dvls.ps1
+```
+
+**Bash**:
+
+```bash
+./install-dvls.sh
+```
+
+### Non-Interactive
+
+Download the script file `install-dvls.ps1` or `install-dvls.sh`, and run it with parameters.
+
+**PowerShell**:
+
+```pwsh
+./install-dvls.ps1 -DVLSHostName "MYHOST" -DVLSAdminEmail "admin@replaceme.com" -DatabaseHost "MYDBHOST" -DatabaseUsername "MYDBUSERNAME" -DatabasePassword "MYSTRONGPASSWORD" -GenerateSelfSignedCertificate -Confirm:$False
+```
+
+**Bash**:
+
+```bash
+./install-dvls.sh --dvls-hostname "MYHOST" --dvls-admin-email "admin@replaceme.com" --database-host "MYDBHOST" --database-username "MYDBUSERNAME" --database-password "MYSTRONGPASSWORD" --generate-self-signed-certificate --no-confirm
+```
+
+#### Non-Interactive Install Parameters
 
 **Bash**
 
