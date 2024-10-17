@@ -28,7 +28,7 @@ There are two ways of running the interactive installation.
 Copy and run this bash one-liner in a terminal:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/Devolutions/ScriptLibrary/refs/heads/main/DVLSForLinux/install-dvls.sh" | bash
+bash <(curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/Devolutions/ScriptLibrary/refs/heads/main/DVLSForLinux/install-dvls.sh")
 ```
 
 ### By Downloading The Script
