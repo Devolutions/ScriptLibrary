@@ -136,7 +136,7 @@ $DVLSVariables.DVLSAdminEmail = ($DVLSAdminEmail ? $DVLSAdminEmail.Trim() : (Rea
 
 if ($GenerateSelfSignedCertificate -and $GenerateSelfSignedCertificate -is [bool])
 {
-    $DVLSVariables.DVLSCertificate = [bool]$GenerateSelfSignedCertificate
+    $DVLSVariables.DVLSCertificate = $GenerateSelfSignedCertificate
 }
 else
 {
@@ -159,7 +159,7 @@ if ([string]::IsNullOrWhiteSpace($DVLSVariables.DatabaseName))
 
 if ($DatabaseEncryptedConnection -is [bool])
 {
-    $DVLSVariables.DatabaseEncryptedConnection = [bool]$DatabaseEncryptedConnection
+    $DVLSVariables.DatabaseEncryptedConnection = $DatabaseEncryptedConnection
 }
 else
 {
@@ -168,7 +168,7 @@ else
 
 if ($DatabaseTrustServerCertificate -is [bool])
 {
-    $DVLSVariables.DatabaseTrustServerCertificate = [bool]$DatabaseTrustServerCertificate
+    $DVLSVariables.DatabaseTrustServerCertificate = $DatabaseTrustServerCertificate
 }
 else
 {
@@ -178,7 +178,7 @@ else
 # Allow for pre-created databases.
 if ($CreateDatabase -is [bool])
 {
-    $DVLSVariables.CreateDatabase = [bool]$CreateDatabase
+    $DVLSVariables.CreateDatabase = $CreateDatabase
 }
 else
 {
