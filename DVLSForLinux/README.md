@@ -44,7 +44,7 @@ You have two ways to run the script, either interactive with prompts, or non-int
 Copy and run this bash one-liner in a terminal:
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/Devolutions/ScriptLibrary/refs/heads/main/DVLSForLinux/install-dvls.sh" | bash
+bash <(curl --proto '=https' --tlsv1.2 -sSf "https://raw.githubusercontent.com/Devolutions/ScriptLibrary/refs/heads/main/DVLSForLinux/install-dvls.sh")
 ```
 
 ## Non-Interactive Install Parameters
