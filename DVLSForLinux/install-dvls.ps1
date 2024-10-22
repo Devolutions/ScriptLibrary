@@ -49,7 +49,7 @@ switch ($sudoResult)
 $DVLSVariables = @{
     'DVLSProductURL'                 = 'https://devolutions.net/productinfo.htm'
     'SystemDPath'                    = '/etc/systemd/system/dvls.service'
-    'CurrentUser'                    = & logname
+    'CurrentUser'                    = (& id -un).Trim()
     'DVLSHostName'                   = $Null
     'DVLSURI'                        = $Null
     'DVLSAPP'                        = 'dvls'
@@ -605,6 +605,7 @@ if ($Result)
     if ($ID -and $Active -and ($Status -eq 'running'))
     {
         Write-Host ("[{0}] {1} is running" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName) -ForegroundColor Green
+        Write-Host ("[{0}] {1} may be found at '{2}' and authenticated with, '{3}', using password, '{4}'" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName, $DVLSVariables.DVLSURI, $DVLSVariables.DVLSAdminUsername, $DVLSVariables.DVLSAdminPassword) -ForegroundColor Green
     }
     else
     {
