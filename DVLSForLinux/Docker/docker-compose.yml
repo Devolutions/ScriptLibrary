@@ -1,0 +1,89 @@
+# Devolutions Server for Linux Docker Configuration
+# Getting Started - Run the following command to start the Docker containers
+# - docker-compose up -d
+# Running Note: To completly rebuild and restart the containers, run the following command:
+# - docker-compose down -v; docker-compose build --no-cache; docker-compose up -d --force-recreate
+#
+# Configuration Notes
+# - If you change, or remove, GENERATE_SELFSIGNED_CERTIFICATE then you will have to modify the dvls.healthcheck.test to:
+#   curl -f http://127.0.0.1:5000
+# - If you change the Database_Password, you will also have to update the password in the mssql.healthcheck.test command as well
+# 
+# Available Environmental Configurations
+# - DVLS_HOSTNAME: Defaults to the IP of the Docker container, with additional DVLS Access URIs set to '127.0.0.1' and 'localhost'
+# - DVLS_ADMIN_EMAIL: Defaults to 'admin@replaceme.com'
+# - DVLS_ADMIN_USERNAME: Defaults to 'dvls-admin'
+# - DVLS_ADMIN_PASSWORD: Defaults to 'dvls-admin'
+# - ENABLE_TELEMETRY: Defaults to 'true' 
+# - GENERATE_SELFSIGNEDCERTIFICATE: Defaults to 'false'
+# - S6_OVERLAY_VERSION: Defaults to '3.2.0.2'
+# - POWERSHELL_VERSION: Defaults to '7.4.6'
+# - DEVOLUTIONS_MODULE_VERSION: Defaults to '2024.3.5'
+# - DVLS_VERSION: Defaults to 'latest', this could be a specific version such as '2024.3.8'
+# - DVLS_PATH: Defaults to '/opt/devolutions/dvls'
+#
+# Accessing Devolutions Server for Linux
+# Once running, navigate to any of the following (change https for http if not using an SSL certificate):
+# - https://127.0.0.1:5000
+# - https://localhost:5000
+# - https://yourhostname:5000 (if you have configured DVLS_HOSTNAME, e.g. myhost.com)
+
+x-common:
+  - &Database_Password MyComplexPassword!123
+
+services:
+  mssql:
+    ports:
+      - 1433:1433
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: dvls-sql
+    environment:
+      MSSQL_SA_PASSWORD: *Database_Password
+      ACCEPT_EULA: 'Y'
+      MSSQL_PID: 'evaluation'
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'MyComplexPassword!123' -Q 'SELECT 1' -C -b -o /dev/null
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - sql-data:/var/opt/mssql
+
+  dvls:
+    ports:
+      - 5000:5000
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dvls
+    environment:
+      MSSQL_SA_PASSWORD: *Database_Password
+      DVLS_ADMIN_USERNAME: 'dvls-admin'
+      DVLS_ADMIN_PASSWORD: 'dvls-admin'
+      DVLS_ADMIN_EMAIL: 'admin@replaceme.com'
+      GENERATE_SELFSIGNED_CERTIFICATE: 'true'
+    tty: true
+    stdin_open: true
+    depends_on:
+      mssql:
+        condition: service_healthy
+    volumes:
+      - dvls-data:/opt/devolutions/dvls
+    healthcheck:
+      test: curl -k -f https://127.0.0.1:5000
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  dvls-healthcheck:
+    image: alpine
+    container_name: dvls-healthcheck
+    depends_on:
+      dvls:
+        condition: service_healthy
+
+volumes:
+  sql-data:
+  dvls-data:
