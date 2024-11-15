@@ -32,9 +32,9 @@ Starting with the Devolutions Server release 2024.3.2.0, Devolutions Server is n
 To modify any of the following, add the parameter and the corresponding value to the `dvls.environment` section of the `docker-compose.yml` file.
 
 > [!WARNING]
-> If you choose not to generate an SSL certificate, `GENERATE_SELFSIGNEDCERTIFICATE` set to `false`, then you will need to modify the healthcheck.
-> Set `dvls.healthcheck.test` to `curl -f http://127.0.0.1:5000`
-> If you modify the MSSQL `sa` password, make sure to modify the password within the MSSQL healthcheck.
+> If you choose not to generate an SSL certificate, `GENERATE_SELFSIGNEDCERTIFICATE` set to `false`, then you will need to modify the healthcheck.\
+> Set `dvls.healthcheck.test` to `curl -f http://127.0.0.1:5000`\
+> If you modify the MSSQL `sa` password, make sure to modify the password within the MSSQL healthcheck.\
 > Modify `mssql.healthcheck.test` to use the new password.
 
 | Parameter                                | Description                                                                            |
