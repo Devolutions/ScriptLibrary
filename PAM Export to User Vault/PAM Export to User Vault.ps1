@@ -17,7 +17,7 @@ If ($PersonalPamVault){
 			Write-Host $PamAccount.Label "is being created in RDM Private User vault"
 			$session = New-RDMSession -Name $PamAccount.Label -Type Credential
 			$Session.Credentials.CredentialType = 'DpsPam'
-			$Session.Credentials.DPSServer = $DevolutionsURL
+			$Session.Credentials.DPSServer = $url
 			$Session.Credentials.DPSPamUseMyAccountSettings = $true
 			$Session.Credentials.DpsPamCredentialID = $PamAccount.ID
             $session.Credentials.DpsPamCredentialName = $PamAccount.Label
