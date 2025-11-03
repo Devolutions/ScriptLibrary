@@ -1,0 +1,27 @@
+{
+    "Connections": [{
+            "ConnectionType": 30,
+            "ID": "39ad70e5-6547-494c-a045-b784e0405c10",
+            "Name": "PAM Export to User Vault",
+            "OpenEmbedded": true,
+            "PowerShell": {
+                "Arguments": "-PAMVaultName '{1}'",
+                "CustomParameters": {
+                    "ExtraParametersData": [],
+                    "Parameter1DataType": 1,
+                    "Parameter1Label": "PAMVaultName",
+                    "SafeParam1Default": "Uk0aCB/IFBo8hdcDFk1rZQ=="
+                },
+                "EmbeddedScriptCompressed": "rVXRbtowFH0GiX+waKSGB6P9AA+s6bZIhUZNoQ9VtZnkMjyZmNoOHer677t2QkhKijqtEVTEzj33nHOP04gptiZ+r9u5j+xPMKD8CctSZqTakRHxblUOgwf7wJwJjuswlWaaC3GtLtcbs/OLzdgonv188KLxZM5yYaaI1esOet1e10s1AvlfwdCbYBIww2KZqwTIH3K3AgX0evELEkOeve/D290GCIVHco6Pxucvg/tPCO/lSiBEDUE7hEjJDSizI7SGatvRaicGtQWFEDFozWWGMFN4okG8v6efmYaZ4sQ1oTMN1+PcrLAiAqVlxkTE1k7SXkQQVyuvFRCUYJUPb+WVfEIrB4SumUlWpGFMbbtUGC6Jf9Rw8IzO1lfHSSLzzFg7KyLVGh1rlMKTMFtKhU2tuDaHga2/SJGCCgPn9FHbYRi8uMaKb3HcdhCFV/u+uFLuVSaGWSLyFOJ8UWDrY2t8bH4hswzvsOQw6AsFKWSGM3GObmH0iierVV37fagKNhr5YoWlioKBocloYWUI4VlD2t4nZ2rnDDGRP8FxK7J1s8QOmHhuSCbx5jfXptcl5WXHQ3HdbzPlrRCU7lath1dsAQInXlDo3ClugH6T2rQ81eeaLACPFEkc09Tqwa6kJFBj3ndonm4E/ECQUEfmuAV1bh7MLWDKqlMDGFX2v10SRHFx9Ow7JICtFLkdu57dXJ0sQlRUNtmVVGMwBk2wyfMMvolO1DpGhxVM96ghOgwO87TX3rCTKM660bF5jkfcehaqQVAFSwV6Regc1EJqR97GtXMpNLwnA0wIHH66K+KoT0agTZpj/v+BbYKf7f8PFKxsRIujY49uvnE7fEkUPOYcfXQy7fnx32W4fSllzbSGwYD8aHKwF5UKD/y7h/ga1WlzR/E1sL1qc+nPrKZKZr8tDG0QH5PSD0prG+S/x7de7YJs/+AXP73uXw==",
+                "IsEmbeddedScript": true,
+                "LoadRDMCmdLet": true,
+                "Version": 3
+            },
+            "Tools": {
+                "ConnectionType": 7
+            }
+        }
+    ],
+    "DatabaseID": "1c25577d-e924-40b2-80cd-d9c64e9c0ef4",
+    "Version": 2
+}
