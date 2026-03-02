@@ -12,6 +12,7 @@ show_usage() {
   echo "  --database-host <DatabaseHost>           Specify the database host"
   echo "  --database-username <DatabaseUsername>   Specify the database username"
   echo "  --database-password <DatabasePassword>   Specify the database password"
+  echo "  --database-port <DatabasePort>           Specify the database port (default: 1433)"
   echo "  --database-name <DatabaseName>           Specify the database name"
   echo "  --zip-file <ZipFile>                     Specify a zip file for the DVLS installation file"
   echo "  --dps-path <DpsPath>                     Specify the install path (default: /opt/devolutions/dvls)"
@@ -43,7 +44,7 @@ show_usage() {
   exit 1
 }
 
-VALID_ARGS=$(getopt --options hy --longoptions help,dvls-hostname:,dvls-admin-email:,database-host:,database-username:,database-password:,database-name:,zip-file:,dps-path:,port:,service-name:,database-encrypted-connection,no-database-encrypted-connection,database-trust-server-certificate,no-database-trust-server-certificate,no-create-database,generate-self-signed-certificate,no-generate-self-signed-certificate,disable-telemetry,no-confirm,keep-installation-file,no-keep-installation-file -- "$@")
+VALID_ARGS=$(getopt --options hy --longoptions help,dvls-hostname:,dvls-admin-email:,database-host:,database-port:,database-username:,database-password:,database-name:,zip-file:,dps-path:,port:,service-name:,database-encrypted-connection,no-database-encrypted-connection,database-trust-server-certificate,no-database-trust-server-certificate,no-create-database,generate-self-signed-certificate,no-generate-self-signed-certificate,disable-telemetry,no-confirm,keep-installation-file,no-keep-installation-file -- "$@")
 
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -80,6 +81,10 @@ while [ : ]; do
       ;;
     --database-password)
       args+=("-DatabasePassword:$2")
+      shift 2
+      ;;
+    --database-port)
+      args+=("-DatabasePort:$2")
       shift 2
       ;;
     --database-name)

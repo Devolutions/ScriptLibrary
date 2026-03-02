@@ -5,6 +5,7 @@ param(
     [string] $DVLSHostName,
     [string] $DVLSAdminEmail,
     [string] $DatabaseHost,
+    [int] $DatabasePort = 1433,
     [string] $DatabaseUsername,
     [string] $DatabasePassword,
     [string] $DatabaseName,
@@ -63,6 +64,7 @@ $DVLSVariables = @{
     'DVLSUser'                       = 'dvls'
     'DVLSGroup'                      = 'dvls'
     'DatabaseHost'                   = $Null
+    'DatabasePort'                   = $DatabasePort
     'DatabaseUsername'               = $Null
     'DatabasePassword'               = $Null
     'DatabaseName'                   = $Null
@@ -133,7 +135,19 @@ if ($DVLSVariables.ZipFile -and -not ((Get-Item -Path $DVLSVariables.ZipFile -Er
 # Prompt the user for all the missing information (interactive mode)
 
 $DVLSVariables.DVLSHostName = ($DVLSHostName ? $DVLSHostName.Trim() : (Read-Host 'Enter the hostname or IP of this server (what URL DVLS responds on)').Trim())
-$DVLSVariables.DatabaseHost = ($DatabaseHost ? $DatabaseHost.Trim() : (Read-Host 'Enter the database host').Trim())
+if ($DatabaseHost)
+{
+    $DVLSVariables.DatabaseHost = $DatabaseHost.Trim()
+}
+else
+{
+    $DVLSVariables.DatabaseHost = (Read-Host 'Enter the database host (IP or hostname, without port)').Trim()
+    $portInput = (Read-Host "Enter the database port (press enter to use the default: $($DVLSVariables.DatabasePort))").Trim()
+    if ($portInput)
+    {
+        $DVLSVariables.DatabasePort = [int]$portInput
+    }
+}
 $DVLSVariables.DatabaseUsername = ($DatabaseUsername ? $DatabaseUsername.Trim() : (Read-Host 'Enter the database username').Trim())
 $DVLSVariables.DatabasePassword = ($DatabasePassword ? $DatabasePassword : (Read-Host 'Enter the database user password' -MaskInput))
 $DVLSVariables.DatabaseName = ($DatabaseName ? $DatabaseName.Trim() : (Read-Host "Enter the database name (press enter to use the default: 'dvls')").Trim())
@@ -205,6 +219,7 @@ $DVLSVariables | Select-Object -Property @(
     'DVLSCertificate'
     'CreateDatabase'
     'DatabaseHost'
+    'DatabasePort'
     'DatabaseUsername'
     'DatabaseName'
     @{
@@ -411,8 +426,10 @@ Set-Location -Path $DVLSVariables.DVLSPath | Out-Null
 #region Install DVLS
 Write-Host ("[{0}] Installing {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName) -ForegroundColor Green
 
+$databaseHostWithPort = "{0},{1}" -f $DVLSVariables.DatabaseHost, $DVLSVariables.DatabasePort
+
 $Params = @{
-    'DatabaseHost'           = $DVLSVariables.DatabaseHost
+    'DatabaseHost'           = $databaseHostWithPort
     'DatabaseName'           = $DVLSVariables.DatabaseName
     'DatabaseUserName'       = $DVLSVariables.DatabaseUsername
     'DatabasePassword'       = $DVLSVariables.DatabasePassword
@@ -420,8 +437,8 @@ $Params = @{
     'AccessUri'              = $DVLSVariables.DVLSURI
     'HttpListenerUri'        = $DVLSVariables.DVLSURI
     'DPSPath'                = $DVLSVariables.DVLSPath
-    'UseEncryptedConnection' = $DVLSVariables.UseEncryptedConnection
-    'TrustServerCertificate' = $DVLSVariables.TrustServerCertificate
+    'UseEncryptedConnection' = $DVLSVariables.DatabaseEncryptedConnection
+    'TrustServerCertificate' = $DVLSVariables.DatabaseTrustServerCertificate
     'EnableTelemetry'        = $DVLSVariables.EnableTelemetry
     'DisableEncryptConfig'   = $True
 }
