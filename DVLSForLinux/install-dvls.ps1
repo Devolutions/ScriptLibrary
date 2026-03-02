@@ -15,7 +15,10 @@ param(
     [Nullable[bool]] $DatabaseEncryptedConnection,
     [Nullable[bool]] $DatabaseTrustServerCertificate,
     [Nullable[bool]] $GenerateSelfSignedCertificate,
-    [string] $ZipFile
+    [string] $ZipFile,
+    [string] $DpsPath = '/opt/devolutions/dvls',
+    [int] $Port = 5000,
+    [string] $ServiceName = 'dvls'
 )
 
 #region Setup variables
@@ -48,13 +51,15 @@ switch ($sudoResult)
 
 $DVLSVariables = @{
     'DVLSProductURL'                 = 'https://devolutions.net/productinfo.htm'
-    'SystemDPath'                    = '/etc/systemd/system/dvls.service'
+    'SystemDPath'                    = "/etc/systemd/system/${ServiceName}.service"
     'CurrentUser'                    = (& id -un).Trim()
     'DVLSHostName'                   = $Null
     'DVLSURI'                        = $Null
-    'DVLSAPP'                        = 'dvls'
-    'DVLSPath'                       = '/opt/devolutions/dvls'
-    'DVLSExecutable'                 = '/opt/devolutions/dvls/Devolutions.Server'
+    'DVLSAPP'                        = $ServiceName
+    'DVLSPath'                       = $DpsPath
+    'DVLSExecutable'                 = "${DpsPath}/Devolutions.Server"
+    'DVLSPort'                       = $Port
+    'DVLSServiceName'                = $ServiceName
     'DVLSUser'                       = 'dvls'
     'DVLSGroup'                      = 'dvls'
     'DatabaseHost'                   = $Null
@@ -145,11 +150,11 @@ else
 
 if ($DVLSVariables.DVLSCertificate)
 {
-    $DVLSVariables.DVLSURI = ("https://{0}:5000/" -f $DVLSVariables.DVLSHostName)
+    $DVLSVariables.DVLSURI = ("https://{0}:{1}/" -f $DVLSVariables.DVLSHostName, $DVLSVariables.DVLSPort)
 }
 else
 {
-    $DVLSVariables.DVLSURI = ("http://{0}:5000/" -f $DVLSVariables.DVLSHostName)
+    $DVLSVariables.DVLSURI = ("http://{0}:{1}/" -f $DVLSVariables.DVLSHostName, $DVLSVariables.DVLSPort)
 }
 
 if ([string]::IsNullOrWhiteSpace($DVLSVariables.DatabaseName))
@@ -188,6 +193,8 @@ else
 $DVLSVariables | Select-Object -Property @(
     'DVLSHostName'
     'DVLSURI'
+    'DVLSPort'
+    'DVLSServiceName'
     'DVLSPath'
     'DVLSUser'
     'DVLSGroup'
@@ -523,7 +530,7 @@ if ($DVLSVariables.DVLSCertificate)
     {
         $ErrorActionPreference = "Stop"
 
-        Set-DPSAccessUri -ApplicationPath $DVLSVariables.DVLSPath -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -AccessURI ("https://{0}:5000/" -f $DVLSVariables.DVLSHostName)
+        Set-DPSAccessUri -ApplicationPath $DVLSVariables.DVLSPath -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -AccessURI ("https://{0}:{1}/" -f $DVLSVariables.DVLSHostName, $DVLSVariables.DVLSPort)
     }
     catch
     {
@@ -559,11 +566,11 @@ User=$($DVLSVariables.DVLSUser)
 ExecStart=$($DVLSVariables.DVLSExecutable)
 WorkingDirectory=$($DVLSVariables.DVLSPath)
 KillSignal=SIGINT
-SyslogIdentifier=dvls
+SyslogIdentifier=$($DVLSVariables.DVLSServiceName)
 Environment="SCHEDULER_EMBEDDED=true"
 [Install]
 WantedBy=multi-user.target
-Alias=dvls.service
+Alias=$($DVLSVariables.DVLSServiceName).service
 "@
 
 & sudo $PwshExecutable -Command {
@@ -588,15 +595,15 @@ Set-Location -Path $originalLocation | Out-Null
 #region Start DVLS
 Write-Host ("[{0}] Starting {1} at '{2}' - 15 Second Sleep" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName, $DVLSVariables.DVLSURI) -ForegroundColor Green
 
-& sudo systemctl start dvls.service
+& sudo systemctl start "$($DVLSVariables.DVLSServiceName).service"
 
 Start-Sleep -Seconds 15
 
 Write-Host ("[{0}] Restart {1} at '{2}'" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName, $DVLSVariables.DVLSURI) -ForegroundColor Green
 
-& sudo systemctl restart dvls.service
+& sudo systemctl restart "$($DVLSVariables.DVLSServiceName).service"
 
-$Result = & systemctl list-units --type=service --all --no-pager dvls.service --no-legend
+$Result = & systemctl list-units --type=service --all --no-pager "$($DVLSVariables.DVLSServiceName).service" --no-legend
 
 if ($Result)
 {
