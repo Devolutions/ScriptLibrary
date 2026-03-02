@@ -276,13 +276,21 @@ Write-Verbose ("[{0}] Requesting 'sudo -v' for cached credentials" -f (Get-Date 
 #region Setup users, groups, and directories
 Write-Host ("[{0}] Creating user ({1}), group ({2}), and directory ({3})" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup, $DVLSVariables.DVLSPath) -ForegroundColor Green
 
+# Move to a safe CWD before chmod 550 makes the target directory inaccessible to the current user
+Push-Location /tmp
+
 & sudo $PwshExecutable -Command {
     param(
         $DVLSVariables
     )
 
-    & useradd -N $DVLSVariables.DVLSUser
-    & groupadd $DVLSVariables.DVLSGroup
+    # Use -r flag to suppress "already exists" errors on multi-instance installs
+    if (-not (& id -u $DVLSVariables.DVLSUser 2>/dev/null)) {
+        & useradd -N $DVLSVariables.DVLSUser
+    }
+    if (-not (& getent group $DVLSVariables.DVLSGroup 2>/dev/null)) {
+        & groupadd $DVLSVariables.DVLSGroup
+    }
     & usermod -a -G $DVLSVariables.DVLSGroup $DVLSVariables.DVLSUser
     & usermod -a -G $DVLSVariables.DVLSGroup $DVLSVariables.CurrentUser
     & mkdir -p $DVLSVariables.DVLSPath
@@ -335,6 +343,8 @@ if (-not
     Write-Error ("[{0}] User and group assignments on directory, '{1}', are incorrect" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath)
     exit
 }
+
+Pop-Location
 #endregion
 
 #region Retrieve DVLS
