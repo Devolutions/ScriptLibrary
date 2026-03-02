@@ -406,7 +406,7 @@ Write-Host ("[{0}] Installing {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $Dvls
 
 $Params = @{
     'DatabaseHost'           = $DVLSVariables.DatabaseHost
-    'DatabaseName'           = $DVLSVariables.DVLSAPP
+    'DatabaseName'           = $DVLSVariables.DatabaseName
     'DatabaseUserName'       = $DVLSVariables.DatabaseUsername
     'DatabasePassword'       = $DVLSVariables.DatabasePassword
     'ServerName'             = $DVLSVariables.DVLSAPP
