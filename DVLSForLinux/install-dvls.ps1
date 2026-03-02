@@ -430,76 +430,87 @@ if (-not $AppSettingsExists)
     exit
 }
 
-Set-Location -Path $DVLSVariables.DVLSPath | Out-Null
 #endregion
 
 #region Install DVLS
 Write-Host ("[{0}] Installing {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName) -ForegroundColor Green
 
-$databaseHostWithPort = "{0},{1}" -f $DVLSVariables.DatabaseHost, $DVLSVariables.DatabasePort
+# Run DPS cmdlets as root — the sg command cannot activate group membership in the parent
+# PowerShell process, so the current user cannot access the 550 DVLS directory.
+& sudo $PwshExecutable -Command {
+    param(
+        $DVLSVariables
+    )
 
-$Params = @{
-    'DatabaseHost'           = $databaseHostWithPort
-    'DatabaseName'           = $DVLSVariables.DatabaseName
-    'DatabaseUserName'       = $DVLSVariables.DatabaseUsername
-    'DatabasePassword'       = $DVLSVariables.DatabasePassword
-    'ServerName'             = $DVLSVariables.DVLSAPP
-    'AccessUri'              = $DVLSVariables.DVLSURI
-    'HttpListenerUri'        = $DVLSVariables.DVLSURI
-    'DPSPath'                = $DVLSVariables.DVLSPath
-    'UseEncryptedConnection' = $DVLSVariables.DatabaseEncryptedConnection
-    'TrustServerCertificate' = $DVLSVariables.DatabaseTrustServerCertificate
-    'EnableTelemetry'        = $DVLSVariables.EnableTelemetry
-    'DisableEncryptConfig'   = $True
-}
+    Import-Module -Name 'Devolutions.PowerShell' -Scope Global -ErrorAction Stop
 
-$Configuration = New-DPSInstallConfiguration @Params
+    Set-Location -Path $DVLSVariables.DVLSPath
 
-New-DPSAppsettings -Configuration $Configuration
+    $databaseHostWithPort = "{0},{1}" -f $DVLSVariables.DatabaseHost, $DVLSVariables.DatabasePort
 
-$Settings = Get-DPSAppSettings -ApplicationPath $DVLSVariables.DVLSPath
-
-$previousActionPreference = $ErrorActionPreference
-
-try
-{
-    $ErrorActionPreference = "Stop"
-
-    if ($DVLSVariables.CreateDatabase)
-    {
-        New-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
+    $Params = @{
+        'DatabaseHost'           = $databaseHostWithPort
+        'DatabaseName'           = $DVLSVariables.DatabaseName
+        'DatabaseUserName'       = $DVLSVariables.DatabaseUsername
+        'DatabasePassword'       = $DVLSVariables.DatabasePassword
+        'ServerName'             = $DVLSVariables.DVLSAPP
+        'AccessUri'              = $DVLSVariables.DVLSURI
+        'HttpListenerUri'        = $DVLSVariables.DVLSURI
+        'DPSPath'                = $DVLSVariables.DVLSPath
+        'UseEncryptedConnection' = $DVLSVariables.DatabaseEncryptedConnection
+        'TrustServerCertificate' = $DVLSVariables.DatabaseTrustServerCertificate
+        'EnableTelemetry'        = $DVLSVariables.EnableTelemetry
+        'DisableEncryptConfig'   = $True
     }
 
-    Update-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -InstallationPath $DVLSVariables.DVLSPath
-}
-catch
-{
-    Write-Error ("[{0}] Failed to create or update the database: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
-    exit
-}
-finally
-{
-    $ErrorActionPreference = $previousActionPreference
-}
+    $Configuration = New-DPSInstallConfiguration @Params
 
-try
-{
-    $ErrorActionPreference = "Stop"
+    New-DPSAppsettings -Configuration $Configuration
 
-    New-DPSDataSourceSettings -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
-    New-DPSEncryptConfiguration -ApplicationPath $DVLSVariables.DVLSPath
-    New-DPSDatabaseAppSettings -Configuration $Configuration
-    New-DPSAdministrator -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -Name $DVLSVariables.DVLSAdminUsername -Password $DVLSVariables.DVLSAdminPassword -Email $DVLSVariables.DVLSAdminEmail
-}
-catch
-{
-    Write-Error ("[{0}] Failed to update settings in the database: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
-    exit
-}
-finally
-{
-    $ErrorActionPreference = $previousActionPreference
-}
+    $Settings = Get-DPSAppSettings -ApplicationPath $DVLSVariables.DVLSPath
+
+    $previousActionPreference = $ErrorActionPreference
+
+    try
+    {
+        $ErrorActionPreference = "Stop"
+
+        if ($DVLSVariables.CreateDatabase)
+        {
+            New-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
+        }
+
+        Update-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -InstallationPath $DVLSVariables.DVLSPath
+    }
+    catch
+    {
+        Write-Error ("[{0}] Failed to create or update the database: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
+        exit 1
+    }
+    finally
+    {
+        $ErrorActionPreference = $previousActionPreference
+    }
+
+    try
+    {
+        $ErrorActionPreference = "Stop"
+
+        New-DPSDataSourceSettings -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
+        New-DPSEncryptConfiguration -ApplicationPath $DVLSVariables.DVLSPath
+        New-DPSDatabaseAppSettings -Configuration $Configuration
+        New-DPSAdministrator -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -Name $DVLSVariables.DVLSAdminUsername -Password $DVLSVariables.DVLSAdminPassword -Email $DVLSVariables.DVLSAdminEmail
+    }
+    catch
+    {
+        Write-Error ("[{0}] Failed to update settings in the database: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
+        exit 1
+    }
+    finally
+    {
+        $ErrorActionPreference = $previousActionPreference
+    }
+} -Args $DVLSVariables
 
 if ($DVLSVariables.DVLSCertificate)
 {
@@ -544,30 +555,38 @@ if ($DVLSVariables.DVLSCertificate)
         Move-Item -Path $pfxTmpPath -Destination $pfxDvlsPath -Force
     } -Args $keyTmpPath, $keyDvlsPath, $crtTmpPath, $crtDvlsPath, $pfxTmpPath, $pfxDvlsPath
 
-    $JSON = Get-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json') | ConvertFrom-Json -Depth 100
+    # Update appsettings.json and access URI as root (directory is 550, not accessible to current user)
+    & sudo $PwshExecutable -Command {
+        param(
+            $DVLSVariables,
+            $pfxDvlsPath
+        )
 
-    $JSON.Kestrel.Endpoints.Http | Add-Member -MemberType NoteProperty -Name 'Certificate' -Value @{
-        'Path'     = $pfxDvlsPath
-        'Password' = ''
-    }
+        Import-Module -Name 'Devolutions.PowerShell' -Scope Global -ErrorAction Stop
 
-    $JSON | ConvertTo-Json -Depth 100 | Set-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json')
+        $appSettingsPath = Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json'
+        $JSON = Get-Content -Path $appSettingsPath | ConvertFrom-Json -Depth 100
 
-    try
-    {
-        $ErrorActionPreference = "Stop"
+        $JSON.Kestrel.Endpoints.Http | Add-Member -MemberType NoteProperty -Name 'Certificate' -Value @{
+            'Path'     = $pfxDvlsPath
+            'Password' = ''
+        }
 
-        Set-DPSAccessUri -ApplicationPath $DVLSVariables.DVLSPath -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -AccessURI ("https://{0}:{1}/" -f $DVLSVariables.DVLSHostName, $DVLSVariables.DVLSPort)
-    }
-    catch
-    {
-        Write-Error ("[{0}] Failed to set the new DPS access URI: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
-        exit
-    }
-    finally
-    {
-        $ErrorActionPreference = $previousActionPreference
-    }
+        $JSON | ConvertTo-Json -Depth 100 | Set-Content -Path $appSettingsPath
+
+        try
+        {
+            $ErrorActionPreference = "Stop"
+
+            $Settings = Get-DPSAppSettings -ApplicationPath $DVLSVariables.DVLSPath
+            Set-DPSAccessUri -ApplicationPath $DVLSVariables.DVLSPath -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -AccessURI ("https://{0}:{1}/" -f $DVLSVariables.DVLSHostName, $DVLSVariables.DVLSPort)
+        }
+        catch
+        {
+            Write-Error ("[{0}] Failed to set the new DPS access URI: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
+            exit 1
+        }
+    } -Args $DVLSVariables, $pfxDvlsPath
 
     & sudo $PwshExecutable -Command {
         param(
