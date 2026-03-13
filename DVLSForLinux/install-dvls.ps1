@@ -17,7 +17,7 @@ param(
     [Nullable[bool]] $DatabaseTrustServerCertificate,
     [Nullable[bool]] $GenerateSelfSignedCertificate,
     [string] $ZipFile,
-    [string] $DpsPath = '/opt/devolutions/dvls',
+    [string] $DVLSPath = '/opt/devolutions/dvls',
     [int] $Port = 5000,
     [string] $ServiceName = 'dvls'
 )
@@ -26,7 +26,7 @@ param(
 
 # Retrieve PowerShell executable to support PowerShell Preview
 $PwshExecutable = (Get-Process -Id $pid).Path
-$DvlsForLinuxName = 'Devolutions Server for Linux (Beta)'
+$DvlsForLinuxName = 'Devolutions Server for Linux'
 $originalLocation = (Get-Location).Path
 
 Write-Host ("[{0}] Starting the {1} installation script" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName) -ForegroundColor Green
@@ -57,8 +57,8 @@ $DVLSVariables = @{
     'DVLSHostName'                   = $Null
     'DVLSURI'                        = $Null
     'DVLSAPP'                        = $ServiceName
-    'DVLSPath'                       = $DpsPath
-    'DVLSExecutable'                 = "${DpsPath}/Devolutions.Server"
+    'DVLSPath'                       = $DVLSPath
+    'DVLSExecutable'                 = "${DVLSPath}/Devolutions.Server"
     'DVLSPort'                       = $Port
     'DVLSServiceName'                = $ServiceName
     'DVLSUser'                       = 'dvls'
@@ -152,6 +152,36 @@ $DVLSVariables.DatabaseUsername = ($DatabaseUsername ? $DatabaseUsername.Trim() 
 $DVLSVariables.DatabasePassword = ($DatabasePassword ? $DatabasePassword : (Read-Host 'Enter the database user password' -MaskInput))
 $DVLSVariables.DatabaseName = ($DatabaseName ? $DatabaseName.Trim() : (Read-Host "Enter the database name (press enter to use the default: 'dvls')").Trim())
 $DVLSVariables.DVLSAdminEmail = ($DVLSAdminEmail ? $DVLSAdminEmail.Trim() : (Read-Host 'Enter the email to use for the DVLS administrative user').Trim())
+
+if (-not $PSBoundParameters.ContainsKey('DVLSPath'))
+{
+    $dvlsPathInput = (Read-Host "Enter the install path (press enter to use the default: '$($DVLSVariables.DVLSPath)')").Trim()
+    if ($dvlsPathInput)
+    {
+        $DVLSVariables.DVLSPath = $dvlsPathInput
+        $DVLSVariables.DVLSExecutable = "${dvlsPathInput}/Devolutions.Server"
+    }
+}
+
+if (-not $PSBoundParameters.ContainsKey('Port'))
+{
+    $portInput = (Read-Host "Enter the Kestrel port (press enter to use the default: $($DVLSVariables.DVLSPort))").Trim()
+    if ($portInput)
+    {
+        $DVLSVariables.DVLSPort = [int]$portInput
+    }
+}
+
+if (-not $PSBoundParameters.ContainsKey('ServiceName'))
+{
+    $serviceNameInput = (Read-Host "Enter the systemd service name (press enter to use the default: '$($DVLSVariables.DVLSServiceName)')").Trim()
+    if ($serviceNameInput)
+    {
+        $DVLSVariables.DVLSAPP = $serviceNameInput
+        $DVLSVariables.DVLSServiceName = $serviceNameInput
+        $DVLSVariables.SystemDPath = "/etc/systemd/system/${serviceNameInput}.service"
+    }
+}
 
 if ($GenerateSelfSignedCertificate -and $GenerateSelfSignedCertificate -is [bool])
 {
@@ -583,7 +613,7 @@ if ($DVLSVariables.DVLSCertificate)
         }
         catch
         {
-            Write-Error ("[{0}] Failed to set the new DPS access URI: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
+            Write-Error ("[{0}] Failed to set the new DVLS access URI: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
             exit 1
         }
     } -Args $DVLSVariables, $pfxDvlsPath
