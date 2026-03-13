@@ -5,6 +5,7 @@ param(
     [string] $DVLSHostName,
     [string] $DVLSAdminEmail,
     [string] $DatabaseHost,
+    [int] $DatabasePort = 1433,
     [string] $DatabaseUsername,
     [string] $DatabasePassword,
     [string] $DatabaseName,
@@ -15,14 +16,17 @@ param(
     [Nullable[bool]] $DatabaseEncryptedConnection,
     [Nullable[bool]] $DatabaseTrustServerCertificate,
     [Nullable[bool]] $GenerateSelfSignedCertificate,
-    [string] $ZipFile
+    [string] $ZipFile,
+    [string] $DVLSPath = '/opt/devolutions/dvls',
+    [int] $Port = 5000,
+    [string] $ServiceName = 'dvls'
 )
 
 #region Setup variables
 
 # Retrieve PowerShell executable to support PowerShell Preview
 $PwshExecutable = (Get-Process -Id $pid).Path
-$DvlsForLinuxName = 'Devolutions Server for Linux (Beta)'
+$DvlsForLinuxName = 'Devolutions Server for Linux'
 $originalLocation = (Get-Location).Path
 
 Write-Host ("[{0}] Starting the {1} installation script" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName) -ForegroundColor Green
@@ -48,16 +52,19 @@ switch ($sudoResult)
 
 $DVLSVariables = @{
     'DVLSProductURL'                 = 'https://devolutions.net/productinfo.htm'
-    'SystemDPath'                    = '/etc/systemd/system/dvls.service'
+    'SystemDPath'                    = "/etc/systemd/system/${ServiceName}.service"
     'CurrentUser'                    = (& id -un).Trim()
     'DVLSHostName'                   = $Null
     'DVLSURI'                        = $Null
-    'DVLSAPP'                        = 'dvls'
-    'DVLSPath'                       = '/opt/devolutions/dvls'
-    'DVLSExecutable'                 = '/opt/devolutions/dvls/Devolutions.Server'
+    'DVLSAPP'                        = $ServiceName
+    'DVLSPath'                       = $DVLSPath
+    'DVLSExecutable'                 = "${DVLSPath}/Devolutions.Server"
+    'DVLSPort'                       = $Port
+    'DVLSServiceName'                = $ServiceName
     'DVLSUser'                       = 'dvls'
     'DVLSGroup'                      = 'dvls'
     'DatabaseHost'                   = $Null
+    'DatabasePort'                   = $DatabasePort
     'DatabaseUsername'               = $Null
     'DatabasePassword'               = $Null
     'DatabaseName'                   = $Null
@@ -128,11 +135,53 @@ if ($DVLSVariables.ZipFile -and -not ((Get-Item -Path $DVLSVariables.ZipFile -Er
 # Prompt the user for all the missing information (interactive mode)
 
 $DVLSVariables.DVLSHostName = ($DVLSHostName ? $DVLSHostName.Trim() : (Read-Host 'Enter the hostname or IP of this server (what URL DVLS responds on)').Trim())
-$DVLSVariables.DatabaseHost = ($DatabaseHost ? $DatabaseHost.Trim() : (Read-Host 'Enter the database host').Trim())
+if ($DatabaseHost)
+{
+    $DVLSVariables.DatabaseHost = $DatabaseHost.Trim()
+}
+else
+{
+    $DVLSVariables.DatabaseHost = (Read-Host 'Enter the database host (IP or hostname, without port)').Trim()
+    $portInput = (Read-Host "Enter the database port (press enter to use the default: $($DVLSVariables.DatabasePort))").Trim()
+    if ($portInput)
+    {
+        $DVLSVariables.DatabasePort = [int]$portInput
+    }
+}
 $DVLSVariables.DatabaseUsername = ($DatabaseUsername ? $DatabaseUsername.Trim() : (Read-Host 'Enter the database username').Trim())
 $DVLSVariables.DatabasePassword = ($DatabasePassword ? $DatabasePassword : (Read-Host 'Enter the database user password' -MaskInput))
 $DVLSVariables.DatabaseName = ($DatabaseName ? $DatabaseName.Trim() : (Read-Host "Enter the database name (press enter to use the default: 'dvls')").Trim())
 $DVLSVariables.DVLSAdminEmail = ($DVLSAdminEmail ? $DVLSAdminEmail.Trim() : (Read-Host 'Enter the email to use for the DVLS administrative user').Trim())
+
+if (-not $PSBoundParameters.ContainsKey('DVLSPath'))
+{
+    $dvlsPathInput = (Read-Host "Enter the install path (press enter to use the default: '$($DVLSVariables.DVLSPath)')").Trim()
+    if ($dvlsPathInput)
+    {
+        $DVLSVariables.DVLSPath = $dvlsPathInput
+        $DVLSVariables.DVLSExecutable = "${dvlsPathInput}/Devolutions.Server"
+    }
+}
+
+if (-not $PSBoundParameters.ContainsKey('Port'))
+{
+    $portInput = (Read-Host "Enter the Kestrel port (press enter to use the default: $($DVLSVariables.DVLSPort))").Trim()
+    if ($portInput)
+    {
+        $DVLSVariables.DVLSPort = [int]$portInput
+    }
+}
+
+if (-not $PSBoundParameters.ContainsKey('ServiceName'))
+{
+    $serviceNameInput = (Read-Host "Enter the systemd service name (press enter to use the default: '$($DVLSVariables.DVLSServiceName)')").Trim()
+    if ($serviceNameInput)
+    {
+        $DVLSVariables.DVLSAPP = $serviceNameInput
+        $DVLSVariables.DVLSServiceName = $serviceNameInput
+        $DVLSVariables.SystemDPath = "/etc/systemd/system/${serviceNameInput}.service"
+    }
+}
 
 if ($GenerateSelfSignedCertificate -and $GenerateSelfSignedCertificate -is [bool])
 {
@@ -145,11 +194,11 @@ else
 
 if ($DVLSVariables.DVLSCertificate)
 {
-    $DVLSVariables.DVLSURI = ("https://{0}:5000/" -f $DVLSVariables.DVLSHostName)
+    $DVLSVariables.DVLSURI = ("https://{0}:{1}/" -f $DVLSVariables.DVLSHostName, $DVLSVariables.DVLSPort)
 }
 else
 {
-    $DVLSVariables.DVLSURI = ("http://{0}:5000/" -f $DVLSVariables.DVLSHostName)
+    $DVLSVariables.DVLSURI = ("http://{0}:{1}/" -f $DVLSVariables.DVLSHostName, $DVLSVariables.DVLSPort)
 }
 
 if ([string]::IsNullOrWhiteSpace($DVLSVariables.DatabaseName))
@@ -188,6 +237,8 @@ else
 $DVLSVariables | Select-Object -Property @(
     'DVLSHostName'
     'DVLSURI'
+    'DVLSPort'
+    'DVLSServiceName'
     'DVLSPath'
     'DVLSUser'
     'DVLSGroup'
@@ -198,6 +249,7 @@ $DVLSVariables | Select-Object -Property @(
     'DVLSCertificate'
     'CreateDatabase'
     'DatabaseHost'
+    'DatabasePort'
     'DatabaseUsername'
     'DatabaseName'
     @{
@@ -254,13 +306,21 @@ Write-Verbose ("[{0}] Requesting 'sudo -v' for cached credentials" -f (Get-Date 
 #region Setup users, groups, and directories
 Write-Host ("[{0}] Creating user ({1}), group ({2}), and directory ({3})" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSUser, $DVLSVariables.DVLSGroup, $DVLSVariables.DVLSPath) -ForegroundColor Green
 
+# Move to a safe CWD before chmod 550 makes the target directory inaccessible to the current user
+Push-Location /tmp
+
 & sudo $PwshExecutable -Command {
     param(
         $DVLSVariables
     )
 
-    & useradd -N $DVLSVariables.DVLSUser
-    & groupadd $DVLSVariables.DVLSGroup
+    # Use -r flag to suppress "already exists" errors on multi-instance installs
+    if (-not (& id -u $DVLSVariables.DVLSUser 2>/dev/null)) {
+        & useradd -N $DVLSVariables.DVLSUser
+    }
+    if (-not (& getent group $DVLSVariables.DVLSGroup 2>/dev/null)) {
+        & groupadd $DVLSVariables.DVLSGroup
+    }
     & usermod -a -G $DVLSVariables.DVLSGroup $DVLSVariables.DVLSUser
     & usermod -a -G $DVLSVariables.DVLSGroup $DVLSVariables.CurrentUser
     & mkdir -p $DVLSVariables.DVLSPath
@@ -313,6 +373,8 @@ if (-not
     Write-Error ("[{0}] User and group assignments on directory, '{1}', are incorrect" -f (Get-Date -Format "yyyyMMddHHmmss"), $DVLSVariables.DVLSPath)
     exit
 }
+
+Pop-Location
 #endregion
 
 #region Retrieve DVLS
@@ -398,74 +460,87 @@ if (-not $AppSettingsExists)
     exit
 }
 
-Set-Location -Path $DVLSVariables.DVLSPath | Out-Null
 #endregion
 
 #region Install DVLS
 Write-Host ("[{0}] Installing {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName) -ForegroundColor Green
 
-$Params = @{
-    'DatabaseHost'           = $DVLSVariables.DatabaseHost
-    'DatabaseName'           = $DVLSVariables.DVLSAPP
-    'DatabaseUserName'       = $DVLSVariables.DatabaseUsername
-    'DatabasePassword'       = $DVLSVariables.DatabasePassword
-    'ServerName'             = $DVLSVariables.DVLSAPP
-    'AccessUri'              = $DVLSVariables.DVLSURI
-    'HttpListenerUri'        = $DVLSVariables.DVLSURI
-    'DPSPath'                = $DVLSVariables.DVLSPath
-    'UseEncryptedConnection' = $DVLSVariables.UseEncryptedConnection
-    'TrustServerCertificate' = $DVLSVariables.TrustServerCertificate
-    'EnableTelemetry'        = $DVLSVariables.EnableTelemetry
-    'DisableEncryptConfig'   = $True
-}
+# Run DPS cmdlets as root — the sg command cannot activate group membership in the parent
+# PowerShell process, so the current user cannot access the 550 DVLS directory.
+& sudo $PwshExecutable -Command {
+    param(
+        $DVLSVariables
+    )
 
-$Configuration = New-DPSInstallConfiguration @Params
+    Import-Module -Name 'Devolutions.PowerShell' -Scope Global -ErrorAction Stop
 
-New-DPSAppsettings -Configuration $Configuration
+    Set-Location -Path $DVLSVariables.DVLSPath
 
-$Settings = Get-DPSAppSettings -ApplicationPath $DVLSVariables.DVLSPath
+    $databaseHostWithPort = "{0},{1}" -f $DVLSVariables.DatabaseHost, $DVLSVariables.DatabasePort
 
-$previousActionPreference = $ErrorActionPreference
-
-try
-{
-    $ErrorActionPreference = "Stop"
-
-    if ($DVLSVariables.CreateDatabase)
-    {
-        New-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
+    $Params = @{
+        'DatabaseHost'           = $databaseHostWithPort
+        'DatabaseName'           = $DVLSVariables.DatabaseName
+        'DatabaseUserName'       = $DVLSVariables.DatabaseUsername
+        'DatabasePassword'       = $DVLSVariables.DatabasePassword
+        'ServerName'             = $DVLSVariables.DVLSAPP
+        'AccessUri'              = $DVLSVariables.DVLSURI
+        'HttpListenerUri'        = $DVLSVariables.DVLSURI
+        'DPSPath'                = $DVLSVariables.DVLSPath
+        'UseEncryptedConnection' = $DVLSVariables.DatabaseEncryptedConnection
+        'TrustServerCertificate' = $DVLSVariables.DatabaseTrustServerCertificate
+        'EnableTelemetry'        = $DVLSVariables.EnableTelemetry
+        'DisableEncryptConfig'   = $True
     }
 
-    Update-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -InstallationPath $DVLSVariables.DVLSPath
-}
-catch
-{
-    Write-Error ("[{0}] Failed to create or update the database: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
-    exit
-}
-finally
-{
-    $ErrorActionPreference = $previousActionPreference
-}
+    $Configuration = New-DPSInstallConfiguration @Params
 
-try
-{
-    $ErrorActionPreference = "Stop"
+    New-DPSAppsettings -Configuration $Configuration
 
-    New-DPSDataSourceSettings -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
-    New-DPSEncryptConfiguration -ApplicationPath $DVLSVariables.DVLSPath
-    New-DPSDatabaseAppSettings -Configuration $Configuration
-    New-DPSAdministrator -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -Name $DVLSVariables.DVLSAdminUsername -Password $DVLSVariables.DVLSAdminPassword -Email $DVLSVariables.DVLSAdminEmail
-}
-catch
-{
-    Write-Error ("[{0}] Failed to update settings in the database: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
-    exit
-}
-finally
-{
-    $ErrorActionPreference = $previousActionPreference
-}
+    $Settings = Get-DPSAppSettings -ApplicationPath $DVLSVariables.DVLSPath
+
+    $previousActionPreference = $ErrorActionPreference
+
+    try
+    {
+        $ErrorActionPreference = "Stop"
+
+        if ($DVLSVariables.CreateDatabase)
+        {
+            New-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
+        }
+
+        Update-DPSDatabase -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -InstallationPath $DVLSVariables.DVLSPath
+    }
+    catch
+    {
+        Write-Error ("[{0}] Failed to create or update the database: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
+        exit 1
+    }
+    finally
+    {
+        $ErrorActionPreference = $previousActionPreference
+    }
+
+    try
+    {
+        $ErrorActionPreference = "Stop"
+
+        New-DPSDataSourceSettings -ConnectionString $Settings.ConnectionStrings.LocalSqlServer
+        New-DPSEncryptConfiguration -ApplicationPath $DVLSVariables.DVLSPath
+        New-DPSDatabaseAppSettings -Configuration $Configuration
+        New-DPSAdministrator -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -Name $DVLSVariables.DVLSAdminUsername -Password $DVLSVariables.DVLSAdminPassword -Email $DVLSVariables.DVLSAdminEmail
+    }
+    catch
+    {
+        Write-Error ("[{0}] Failed to update settings in the database: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
+        exit 1
+    }
+    finally
+    {
+        $ErrorActionPreference = $previousActionPreference
+    }
+} -Args $DVLSVariables
 
 if ($DVLSVariables.DVLSCertificate)
 {
@@ -510,30 +585,38 @@ if ($DVLSVariables.DVLSCertificate)
         Move-Item -Path $pfxTmpPath -Destination $pfxDvlsPath -Force
     } -Args $keyTmpPath, $keyDvlsPath, $crtTmpPath, $crtDvlsPath, $pfxTmpPath, $pfxDvlsPath
 
-    $JSON = Get-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json') | ConvertFrom-Json -Depth 100
+    # Update appsettings.json and access URI as root (directory is 550, not accessible to current user)
+    & sudo $PwshExecutable -Command {
+        param(
+            $DVLSVariables,
+            $pfxDvlsPath
+        )
 
-    $JSON.Kestrel.Endpoints.Http | Add-Member -MemberType NoteProperty -Name 'Certificate' -Value @{
-        'Path'     = $pfxDvlsPath
-        'Password' = ''
-    }
+        Import-Module -Name 'Devolutions.PowerShell' -Scope Global -ErrorAction Stop
 
-    $JSON | ConvertTo-Json -Depth 100 | Set-Content -Path (Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json')
+        $appSettingsPath = Join-Path -Path $DVLSVariables.DVLSPath -ChildPath 'appsettings.json'
+        $JSON = Get-Content -Path $appSettingsPath | ConvertFrom-Json -Depth 100
 
-    try
-    {
-        $ErrorActionPreference = "Stop"
+        $JSON.Kestrel.Endpoints.Http | Add-Member -MemberType NoteProperty -Name 'Certificate' -Value @{
+            'Path'     = $pfxDvlsPath
+            'Password' = ''
+        }
 
-        Set-DPSAccessUri -ApplicationPath $DVLSVariables.DVLSPath -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -AccessURI ("https://{0}:5000/" -f $DVLSVariables.DVLSHostName)
-    }
-    catch
-    {
-        Write-Error ("[{0}] Failed to set the new DPS access URI: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
-        exit
-    }
-    finally
-    {
-        $ErrorActionPreference = $previousActionPreference
-    }
+        $JSON | ConvertTo-Json -Depth 100 | Set-Content -Path $appSettingsPath
+
+        try
+        {
+            $ErrorActionPreference = "Stop"
+
+            $Settings = Get-DPSAppSettings -ApplicationPath $DVLSVariables.DVLSPath
+            Set-DPSAccessUri -ApplicationPath $DVLSVariables.DVLSPath -ConnectionString $Settings.ConnectionStrings.LocalSqlServer -AccessURI ("https://{0}:{1}/" -f $DVLSVariables.DVLSHostName, $DVLSVariables.DVLSPort)
+        }
+        catch
+        {
+            Write-Error ("[{0}] Failed to set the new DVLS access URI: {1}" -f (Get-Date -Format "yyyyMMddHHmmss"), $PSItem.Exception.Message)
+            exit 1
+        }
+    } -Args $DVLSVariables, $pfxDvlsPath
 
     & sudo $PwshExecutable -Command {
         param(
@@ -559,11 +642,11 @@ User=$($DVLSVariables.DVLSUser)
 ExecStart=$($DVLSVariables.DVLSExecutable)
 WorkingDirectory=$($DVLSVariables.DVLSPath)
 KillSignal=SIGINT
-SyslogIdentifier=dvls
+SyslogIdentifier=$($DVLSVariables.DVLSServiceName)
 Environment="SCHEDULER_EMBEDDED=true"
 [Install]
 WantedBy=multi-user.target
-Alias=dvls.service
+Alias=$($DVLSVariables.DVLSServiceName).service
 "@
 
 & sudo $PwshExecutable -Command {
@@ -588,15 +671,15 @@ Set-Location -Path $originalLocation | Out-Null
 #region Start DVLS
 Write-Host ("[{0}] Starting {1} at '{2}' - 15 Second Sleep" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName, $DVLSVariables.DVLSURI) -ForegroundColor Green
 
-& sudo systemctl start dvls.service
+& sudo systemctl start "$($DVLSVariables.DVLSServiceName).service"
 
 Start-Sleep -Seconds 15
 
 Write-Host ("[{0}] Restart {1} at '{2}'" -f (Get-Date -Format "yyyyMMddHHmmss"), $DvlsForLinuxName, $DVLSVariables.DVLSURI) -ForegroundColor Green
 
-& sudo systemctl restart dvls.service
+& sudo systemctl restart "$($DVLSVariables.DVLSServiceName).service"
 
-$Result = & systemctl list-units --type=service --all --no-pager dvls.service --no-legend
+$Result = & systemctl list-units --type=service --all --no-pager "$($DVLSVariables.DVLSServiceName).service" --no-legend
 
 if ($Result)
 {

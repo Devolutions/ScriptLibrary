@@ -12,8 +12,12 @@ show_usage() {
   echo "  --database-host <DatabaseHost>           Specify the database host"
   echo "  --database-username <DatabaseUsername>   Specify the database username"
   echo "  --database-password <DatabasePassword>   Specify the database password"
+  echo "  --database-port <DatabasePort>           Specify the database port (default: 1433)"
   echo "  --database-name <DatabaseName>           Specify the database name"
   echo "  --zip-file <ZipFile>                     Specify a zip file for the DVLS installation file"
+  echo "  --dvls-path <DVLSPath>                   Specify the install path (default: /opt/devolutions/dvls)"
+  echo "  --port <Port>                            Specify the Kestrel port (default: 5000)"
+  echo "  --service-name <ServiceName>             Specify the systemd service name (default: dvls)"
   echo
   echo "Flags:"
   echo "  -h, --help                               Show this help message and exit"
@@ -40,7 +44,7 @@ show_usage() {
   exit 1
 }
 
-VALID_ARGS=$(getopt --options hy --longoptions help,dvls-hostname:,dvls-admin-email:,database-host:,database-username:,database-password:,database-name:,zip-file:,database-encrypted-connection,no-database-encrypted-connection,database-trust-server-certificate,no-database-trust-server-certificate,no-create-database,generate-self-signed-certificate,no-generate-self-signed-certificate,disable-telemetry,no-confirm,keep-installation-file,no-keep-installation-file -- "$@")
+VALID_ARGS=$(getopt --options hy --longoptions help,dvls-hostname:,dvls-admin-email:,database-host:,database-port:,database-username:,database-password:,database-name:,zip-file:,dvls-path:,port:,service-name:,database-encrypted-connection,no-database-encrypted-connection,database-trust-server-certificate,no-database-trust-server-certificate,no-create-database,generate-self-signed-certificate,no-generate-self-signed-certificate,disable-telemetry,no-confirm,keep-installation-file,no-keep-installation-file -- "$@")
 
 if [[ $? -ne 0 ]]; then
     exit 1;
@@ -79,12 +83,28 @@ while [ : ]; do
       args+=("-DatabasePassword:$2")
       shift 2
       ;;
+    --database-port)
+      args+=("-DatabasePort:$2")
+      shift 2
+      ;;
     --database-name)
       args+=("-DatabaseName:$2")
       shift 2
       ;;
     --zip-file)
       args+=("-ZipFile:$2")
+      shift 2
+      ;;
+    --dvls-path)
+      args+=("-DVLSPath:$2")
+      shift 2
+      ;;
+    --port)
+      args+=("-Port:$2")
+      shift 2
+      ;;
+    --service-name)
+      args+=("-ServiceName:$2")
       shift 2
       ;;
     --database-encrypted-connection)
