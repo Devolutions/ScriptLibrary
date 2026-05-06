@@ -1,0 +1,18 @@
+# PowerShell build and test artifacts
+TestResults/
+*.trx
+*.coverage
+*.nupkg
+
+# Local editor and OS files
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+Desktop.ini
+
+# Local secret/bootstrap files. PSU's .universal/vaults.ps1 can contain inline credentials.
+.universal/vaults.ps1
+vaults.ps1.local
+*.secret.ps1
+*.secrets.ps1
