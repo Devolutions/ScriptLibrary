@@ -424,19 +424,26 @@ Function Get-DVLSCredentialEntry {
           [Parameter(Mandatory)]
           [Object]$Session,
           [Parameter(Mandatory)]
-          [String]$VaultId
+          [String]$VaultId,
+          [String]$Name
     )
     Process {
         $entries = [System.Collections.Generic.List[Object]]::new()
         $pageNumber = 1
 
         Do {
+            $query = @{
+                pageNumber = $pageNumber
+                pageSize   = $Session.Configuration.PageSize
+            }
+
+            If ($Name) {
+                $query.name = $Name
+            }
+
             $response = Invoke-DVLSRestMethod `
                 -Method Get `
-                -Uri (Join-DVLSApiUri -ServerUrl $Session.ServerUrl -PathSegments @('api', 'v1', 'vault', $VaultId, 'entry') -Query @{
-                    pageNumber = $pageNumber
-                    pageSize   = $Session.Configuration.PageSize
-                }) `
+                -Uri (Join-DVLSApiUri -ServerUrl $Session.ServerUrl -PathSegments @('api', 'v1', 'vault', $VaultId, 'entry') -Query $query) `
                 -Token $Session.TokenId `
                 -Configuration $Session.Configuration
 
@@ -494,7 +501,7 @@ Function Find-DVLSCredentialEntry {
         $vaultIds = @(Get-DVLSVaultId -Session $Session)
 
         ForEach ($vaultId in $vaultIds) {
-            $match = Get-DVLSCredentialEntry -Session $Session -VaultId $vaultId |
+            $match = Get-DVLSCredentialEntry -Session $Session -VaultId $vaultId -Name $Name |
                 Where-Object { (Get-DVLSObjectProperty -InputObject $_ -Name @('name', 'Name')) -EQ $Name } |
                 Select-Object -First 1
 
